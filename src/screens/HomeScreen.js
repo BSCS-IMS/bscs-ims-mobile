@@ -37,7 +37,7 @@ export default function HomeScreen() {
             <Text style={{ fontWeight: "bold" }}>{item.name}</Text>
             <Text>SKU: {item.sku}</Text>
             <Text>
-              Price: {item.currentPrice} {item.priceUnit}
+              Prices: {item.currentPrice} {item.priceUnit}
             </Text>
             <Text>Status: {item.isActive ? "Active" : "Inactive"}</Text>
           </View>
