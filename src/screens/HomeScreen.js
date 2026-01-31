@@ -28,7 +28,7 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 22, marginBottom: 10 }}>Product Listss</Text>
+      <Text style={{ fontSize: 22, marginBottom: 10 }}>Product Test List</Text>
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}
