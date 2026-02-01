@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity } from 'react-native'
 import { router } from 'expo-router'
+import HomeText from '../modules/home-screen/HomeText' // receive this from modules folder
 
 export default function HomeScreen() {
   return (
@@ -13,6 +14,7 @@ export default function HomeScreen() {
       >
         <Text className='text-base font-semibold text-white'>Go Back</Text>
       </TouchableOpacity>
+      <HomeText />
     </View>
   )
 }
