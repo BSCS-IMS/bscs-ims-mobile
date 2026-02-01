@@ -95,12 +95,7 @@ git pull
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Next.js development server (web) |
-| `npm run electron` | Start Electron desktop app (development) |
-| `npm run build` | Build Next.js for production |
-| `npm run start` | Run production build (web) |
-| `npm run electron:build` | Build Electron installer |
-| `npm run lint` | Run ESLint |
+| `npm run start` | Start Expo & every display development server
 
 ---
 
@@ -115,12 +110,6 @@ taskkill /F /IM node.exe
 # Mac/Linux
 killall node
 ```
-
-### Electron Won't Start
-
-1. Make sure Next.js dev server is running first
-2. Check if port 3000 is accessible
-3. Delete `.next` folder and restart: `rm -rf .next`
 
 ### Firebase Permissions Error
 
@@ -184,29 +173,6 @@ git commit -m "feat: add user authentication"
 git commit -m "fix: resolve Firestore connection issue"
 git commit -m "docs: update README with setup instructions"
 ```
-
----
-
-## 🌐 Deployment
-
-### Web Deployment (Vercel)
-
-1. Push to GitHub
-2. Connect repository to [Vercel](https://vercel.com)
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically on push to `main`
-
-### Desktop Distribution
-
-1. Run `npm run electron:build`
-2. Installers created in `dist/` folder
-3. Distribute `.exe`, `.dmg`, or `.AppImage` to users
-
----
-
-[Add your license here]
-
----
 
 ## 👥 Team
 
