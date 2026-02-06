@@ -23,7 +23,9 @@ export default function Index() {
           <Text className='text-base font-semibold text-white'>Go to HomeScreen</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className='mx-1 flex-1 items-center rounded-lg bg-blue-600 py-4 active:bg-blue-700'>
+        <TouchableOpacity 
+          className='mx-1 flex-1 items-center rounded-lg bg-blue-600 py-4 active:bg-blue-700'
+          onPress={()=> router.push('/screens/ResellerScreen')}>
           <Text className='text-base font-semibold text-white'>Button 2</Text>
         </TouchableOpacity>
       </View>
