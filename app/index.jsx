@@ -30,7 +30,7 @@ export default function Index() {
 
       {/* Announcements */}
       <View className='flex-1'>
-        <Text className='mb-3 text-lg font-bold'>Announcements</Text>
+        <Text className='mb-3 text-lg font-bold'>Announcementss</Text>
 
         {Array.from({ length: 5 }).map((_, index) => (
           <View key={index} className='mb-2 h-4 rounded bg-gray-200' />
