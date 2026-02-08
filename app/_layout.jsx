@@ -6,7 +6,12 @@ export default function Layout() {
   return (
     <>
       <StatusBar style='dark' />
-      <Stack />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerLeft: () => null,
+        }}
+      />
     </>
   )
 }
