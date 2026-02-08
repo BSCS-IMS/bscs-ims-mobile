@@ -1,263 +1,267 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  SafeAreaView,
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  TextInput, 
-  StatusBar, 
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Dimensions,
   Animated,
-  Image,
-  Alert,
   Platform,
-  useWindowDimensions,
+  StatusBar,
+  SafeAreaView,
+  FlatList,
+  TouchableWithoutFeedback
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getDatabase } from 'firebase/database';
 
-const ICONS = {
-  'icon-home.png': require('../../assets/icon-home.png'),
-  'icon-seller.png': require('../../assets/icon-seller.png'),
-  'icon-notif.png': require('../../assets/icon-notif.png'),
+const COLORS = {
+  primary: '#1E40AF',
+  background: '#F1F2F7',
+  black: '#000000',
+  white: '#FFFFFF',
+  grayText: '#6B7280',
+  border: '#E5E7EB',
 };
 
-if (Text && Text.defaultProps == null) Text.defaultProps = {};
-if (Text) Text.defaultProps.style = { ...(Text.defaultProps.style || {}), fontFamily: 'Inter' };
-if (TextInput && TextInput.defaultProps == null) TextInput.defaultProps = {};
-if (TextInput) TextInput.defaultProps.style = { ...(TextInput.defaultProps.style || {}), fontFamily: 'Inter' };
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MENU_WIDTH = SCREEN_WIDTH * 0.75;
+
+const INITIAL_DATA = Array.from({ length: 8 }).map((_, i) => ({
+  id: i.toString(),
+  name: 'Name Sample',
+  productCount: Math.floor(Math.random() * 50) + 5,
+}));
 
 export default function ResellerScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const auth = getAuth();
-  const firestore = getFirestore();
-  const database = getDatabase();
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [data, setData] = useState(INITIAL_DATA);
   const [search, setSearch] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState('Name');
   const [asc, setAsc] = useState(true);
 
-  const isSmallScreen = width < 375;
-  const isMediumScreen = width >= 375 && width < 414;
+  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
 
-  const MENU_WIDTH = isSmallScreen ? 240 : isMediumScreen ? 260 : 280;
-  const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
+  const filteredData = useMemo(() => {
+    let result = [...data].filter(item =>
+      item.name.toLowerCase().includes(search.toLowerCase())
+    );
 
-  const numColumns = isSmallScreen ? 2 : 3;
-  const cardWidth = ((width - 24) / numColumns) - 6;
-  const cardHeight = isSmallScreen ? 160 : isMediumScreen ? 180 : 200;
+    result.sort((a, b) => {
+      if (sortBy === 'Name') {
+        return asc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      } else {
+        return asc ? a.productCount - b.productCount : b.productCount - a.productCount;
+      }
+    });
 
-  const logoSize = isSmallScreen ? 44 : 56;
-  const menuIconSize = isSmallScreen ? 24 : 28;
-  const searchIconSize = isSmallScreen ? 18 : 20;
-
-  const FONT_SIZES = {
-    header: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
-    caption: isSmallScreen ? 9 : 11,
-    input: isSmallScreen ? 13 : 14,
-    label: isSmallScreen ? 12 : 14,
-    button: isSmallScreen ? 12 : 14,
-    option: isSmallScreen ? 12 : 14,
-    itemTitle: isSmallScreen ? 10 : 12,
-    itemMeta: isSmallScreen ? 8 : 10,
-    menuItem: isSmallScreen ? 12 : 14,
-  };
+    return result;
+  }, [data, search, sortBy, asc]);
 
   useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: menuOpen ? 0 : 1000,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: menuOpen ? 0 : SCREEN_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: menuOpen ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: menuOpen ? 1 : 0.96,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [menuOpen]);
 
-  const sampleData = useMemo(() => (
-    Array.from({ length: 1 }).map((_, i) => ({
-      id: i.toString(),
-      name: `Sample Name`,
-      products: Math.floor(Math.random() * 20),
-    }))
-  ), []);
-
-  const filtered = useMemo(() => {
-    let data = sampleData.filter(r =>
-      r.name.toLowerCase().includes(search.toLowerCase())
-    );
-    data.sort((a, b) =>
-      sortBy === 'Name'
-        ? (asc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name))
-        : (asc ? a.products - b.products : b.products - a.products)
-    );
-    return data;
-  }, [search, sortBy, asc, sampleData]);
-
-  const onMenuPress = (key) => {
-    setMenuOpen(false);
-    if (key === 'HOME') {
-      router.push('/');
-    } else if (key === 'SELLER') {
-      Alert.alert('Seller pressed');
-    } else if (key === 'NOTIFICATION') {
-      Alert.alert('Notification pressed');
-    }
-  };
+  const renderItem = ({ item }) => (
+    <View
+      className="bg-white rounded-xl p-3 mb-4 shadow-sm"
+      style={{
+        width: (SCREEN_WIDTH / 2) - 24,
+        marginLeft: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      }}
+    >
+      <View className="w-full h-32 bg-gray-100 rounded-lg mb-3 border border-gray-100" />
+      <Text
+        className="font-bold text-base mb-1"
+        style={{ color: COLORS.primary, fontFamily: 'Inter' }}
+        numberOfLines={1}
+      >
+        {item.name}
+      </Text>
+      <Text
+        className="text-xs text-gray-500"
+        style={{ fontFamily: 'Inter' }}
+      >
+        Products: {item.productCount} of prod
+      </Text>
+    </View>
+  );
 
   return (
-    <SafeAreaView className="flex-1 bg-white pt-10">
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.background }}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
-      <View className="bg-white px-4 pt-4">
-        <View className="flex-row items-center justify-between">
-          <View style={{ width: isSmallScreen ? 28 : 36 }} />
+      <View style={{ paddingTop: Platform.OS === 'android' ? 30 : 0 }} />
 
-          <View className="items-center flex-1">
-            <Image
-              source={require('../../assets/logo.png')}
-              style={{ width: logoSize, height: logoSize, resizeMode: 'contain' }}
-            />
-            <Text className="text-[#1E40AF] font-bold mt-1" style={{ fontSize: FONT_SIZES.header }}>
-              MURANG BIGAS
-            </Text>
-            <Text className="text-gray-500" style={{ fontSize: FONT_SIZES.caption }}>
-              L I V E L I H O O D
-            </Text>
-          </View>
+      <View className="flex-1 px-0">
+        <View className="px-5 pb-4">
+          <View className="flex-row items-center justify-between mb-6 pt-2">
+            <View style={{ width: 28 }} />
 
-          <TouchableOpacity onPress={() => setMenuOpen(true)} className="p-2">
-            <MaterialCommunityIcons name="menu" size={menuIconSize} color="#1E40AF" />
-          </TouchableOpacity>
-        </View>
-
-        <View className="mt-4 bg-gray-50 rounded-full px-4 py-2 flex-row items-center">
-          <MaterialCommunityIcons name="magnify" size={searchIconSize} color="#6B7280" />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search"
-            placeholderTextColor="#9CA3AF"
-            className="ml-3 flex-1"
-            style={{ fontSize: FONT_SIZES.input }}
-          />
-        </View>
-
-        <View className={`mt-2 flex-row items-center flex-wrap ${isSmallScreen ? 'gap-1' : ''}`}>
-          <Text className="text-[#1E40AF] mr-2" style={{ fontSize: FONT_SIZES.label }}>
-            Filter by:
-          </Text>
-          <TouchableOpacity
-            onPress={() => setFilterOpen(!filterOpen)}
-            className="px-3 py-1 rounded-full bg-blue-100"
-          >
-            <Text className="text-[#1E40AF] font-semibold" style={{ fontSize: FONT_SIZES.button }}>
-              {sortBy} {asc ? '↑' : '↓'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {filterOpen && (
-          <View className="bg-white border mt-2 rounded-lg p-3 shadow">
-            <TouchableOpacity onPress={() => { setSortBy('Name'); setFilterOpen(false); }} className="py-1">
-              <Text style={{ fontSize: FONT_SIZES.option }}>Name</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setSortBy('Products'); setFilterOpen(false); }} className="py-1">
-              <Text style={{ fontSize: FONT_SIZES.option }}>Products</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setAsc(!asc)} className="py-1">
-              <Text style={{ fontSize: FONT_SIZES.option }}>
-                {asc ? 'Ascending' : 'Descending'}
+            <View className="items-center">
+              <View className="w-16 h-16 rounded-full items-center justify-center mb-1" style={{ backgroundColor: COLORS.primary }}>
+                <Text className="text-white font-extrabold text-4xl" style={{ fontFamily: 'Inter' }}>M</Text>
+              </View>
+              <Text className="font-bold text-lg" style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
+                MURANG BIGAS
               </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <Text className="font-bold text-gray-900 mt-4" style={{ fontSize: FONT_SIZES.header }}>
-          Seller
-        </Text>
-      </View>
-
-      <ScrollView className="flex-1 bg-gray-100 px-3 pt-3" showsVerticalScrollIndicator>
-        <View className="flex-row flex-wrap justify-between">
-          {filtered.map(item => (
-            <View
-              key={item.id}
-              style={{ width: cardWidth, marginBottom: 12, minHeight: cardHeight }}
-              className="bg-white rounded-xl p-2 shadow"
-            >
-              <View
-                style={{ height: isSmallScreen ? 100 : isMediumScreen ? 120 : 140 }}
-                className="bg-gray-100 rounded mb-2"
-              />
-              <Text className="text-[#1E40AF] font-semibold" style={{ fontSize: FONT_SIZES.itemTitle }}>
-                {item.name}
-              </Text>
-              <Text className="text-gray-500 mt-1" style={{ fontSize: FONT_SIZES.itemMeta }}>
-                Products: {item.products}
+              <Text className="text-[10px] tracking-[4px] text-gray-500 uppercase" style={{ fontFamily: 'Inter' }}>
+                Livelihood
               </Text>
             </View>
-          ))}
-        </View>
-        <View style={{ height: 16 }} />
-      </ScrollView>
 
-      {menuOpen && (
-        <TouchableOpacity
-          activeOpacity={1}
-          className="absolute inset-0 bg-black/30 z-30"
-          onPress={() => setMenuOpen(false)}
-        />
-      )}
-
-      <Animated.View
-        className="absolute right-0 top-0 bg-white z-40"
-        style={{
-          width: MENU_WIDTH,
-          height: '100%',
-          marginTop: Platform.OS === 'android' ? 50 : 16,
-          transform: [{ translateX: slideAnim }],
-        }}
-      >
-        <View className="px-4 pt-4 pb-2 border-b border-gray-200 flex-row justify-end">
-          <TouchableOpacity onPress={() => setMenuOpen(false)}>
-            <Image
-              source={require('../../assets/icon-close.png')}
-              style={{ width: isSmallScreen ? 18 : 22, height: isSmallScreen ? 18 : 22, tintColor: '#1E40AF' }}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View className="px-4 pt-4">
-          {[
-            { key: 'HOME', icon: 'icon-home.png' },
-            { key: 'SELLER', icon: 'icon-seller.png' },
-            { key: 'NOTIFICATION', icon: 'icon-notif.png' },
-          ].map(item => (
-            <TouchableOpacity
-              key={item.key}
-              onPress={() => onMenuPress(item.key)}
-              className={`flex-row items-center border-b border-gray-200 ${isSmallScreen ? 'py-3' : 'py-4'}`}
-            >
-              <Image
-                source={ICONS[item.icon]}
-                style={{ width: isSmallScreen ? 18 : 22, height: isSmallScreen ? 18 : 22, tintColor: '#1E40AF' }}
-              />
-              <Text
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={{ flexShrink: 1, fontSize: FONT_SIZES.menuItem }}
-                className="ml-3 text-[#1E40AF] font-semibold"
-              >
-                {item.key}
-              </Text>
+            <TouchableOpacity onPress={() => setMenuOpen(true)}>
+              <MaterialCommunityIcons name="menu" size={28} color={COLORS.primary} />
             </TouchableOpacity>
-          ))}
+          </View>
+
+          <View className="bg-white rounded-full flex-row items-center px-4 py-3 shadow-sm border border-gray-200">
+            <Ionicons name="search" size={20} color="#9CA3AF" />
+            <TextInput
+              placeholder="Search"
+              value={search}
+              onChangeText={setSearch}
+              className="flex-1 ml-2 text-base text-black"
+              style={{ fontFamily: 'Inter' }}
+            />
+          </View>
+
+          <View className="mt-4 z-20 relative">
+            <View className="flex-row items-center">
+              <Text className="mr-2 italic text-sm" style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
+                Filter by:
+              </Text>
+              <TouchableOpacity
+                onPress={() => setFilterOpen(!filterOpen)}
+                className="flex-row items-center bg-[#DBEAFE] px-3 py-1 rounded-full"
+              >
+                <Text className="font-semibold mr-1" style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
+                  {sortBy} {asc ? '↑' : '↓'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {filterOpen && (
+              <View className="absolute top-8 left-16 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 w-40">
+                <TouchableOpacity onPress={() => { setSortBy('Name'); setFilterOpen(false); }} className="py-2 px-2 border-b border-gray-100">
+                  <Text style={{ fontFamily: 'Inter' }}>Name</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setSortBy('Products'); setFilterOpen(false); }} className="py-2 px-2 border-b border-gray-100">
+                  <Text style={{ fontFamily: 'Inter' }}>Products</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setAsc(!asc); setFilterOpen(false); }} className="py-2 px-2">
+                  <Text style={{ fontFamily: 'Inter' }}>{asc ? 'Descending' : 'Ascending'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
-      </Animated.View>
+
+        <View className="flex-1 bg-white rounded-t-[30px] pt-6 overflow-hidden">
+          <Text className="text-xl font-bold px-5 mb-4" style={{ fontFamily: 'Inter' }}>
+            Seller
+          </Text>
+
+          <FlatList
+            data={filteredData}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            numColumns={2}
+            contentContainerStyle={{ paddingBottom: 40, paddingRight: 16 }}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </View>
+
+      <View className="absolute top-0 left-0 right-0 bottom-0 z-50 flex-row" pointerEvents={menuOpen ? 'auto' : 'none'}>
+        <Animated.View
+          className="absolute inset-0 bg-black"
+          style={{ opacity: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] }) }}
+        >
+          <TouchableWithoutFeedback onPress={() => setMenuOpen(false)}>
+            <View className="w-full h-full" />
+          </TouchableWithoutFeedback>
+        </Animated.View>
+
+        <Animated.View
+          style={{
+            transform: [{ translateX: slideAnim }, { scale: scaleAnim }],
+            width: MENU_WIDTH,
+            backgroundColor: '#F8FAFC',
+          }}
+          className="absolute right-0 top-0 bottom-0 shadow-2xl pt-12 border-l border-gray-200"
+        >
+           <View className="items-end px-6 mb-8">
+              <TouchableOpacity onPress={() => setMenuOpen(false)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                <Ionicons name="close" size={32} color={COLORS.primary} />
+              </TouchableOpacity>
+           </View>
+
+           <View className="w-full">
+             <MenuItem
+                icon="home"
+                label="HOME"
+               onPress={() => { setMenuOpen(false); router.replace('/'); }}
+              />
+             <MenuItem
+                icon="person"
+                label="SELLER"
+                onPress={() => { setMenuOpen(false); router.replace('/screens/ResellerScreen'); }}
+              />
+             <MenuItem
+                icon="notifications"
+                label="NOTIFICATION"
+                onPress={() => { setMenuOpen(false); router.replace('/screens/notifications'); }}
+              />
+           </View>
+        </Animated.View>
+      </View>
     </SafeAreaView>
+  );
+}
+
+function MenuItem({ icon, label, onPress }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="flex-row items-center py-4 px-6 border-b border-gray-200 bg-[#E0E7FF] mb-[1px] w-full"
+    >
+      <View className="w-8 items-center justify-center mr-2">
+        <Ionicons name={icon} size={22} color={COLORS.primary} />
+      </View>
+      <Text
+        className="font-bold text-sm"
+        style={{ color: COLORS.primary, fontFamily: 'Inter', flex: 1 }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
