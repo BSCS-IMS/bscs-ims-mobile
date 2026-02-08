@@ -27,6 +27,8 @@ const COLORS = {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.75;
 
+// NOTE: Replace this mock list with a Firebase query (Firestore or Realtime DB).
+// The number of sellers should come from the database (e.g., collection 'sellers').
 const INITIAL_DATA = Array.from({ length: 8 }).map((_, i) => ({
   id: i.toString(),
   name: 'Name Sample',
@@ -97,6 +99,7 @@ export default function ResellerScreen() {
       }}
     >
       <View className="w-full h-32 bg-gray-100 rounded-lg mb-3 border border-gray-100" />
+      {/* seller name: populate from Firebase seller document (e.g., doc.data().name) */}
       <Text
         className="font-bold text-base mb-1"
         style={{ color: COLORS.primary, fontFamily: 'Inter' }}
@@ -108,6 +111,7 @@ export default function ResellerScreen() {
         className="text-xs text-gray-500"
         style={{ fontFamily: 'Inter' }}
       >
+        {/* product quantity: derive from products collection/subcollection; display as 'product (qty)' */}
         Products: {item.productCount} of prod
       </Text>
     </View>
