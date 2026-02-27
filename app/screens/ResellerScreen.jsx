@@ -10,10 +10,13 @@ import {
   StatusBar,
   SafeAreaView,
   FlatList,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { fetchAllResellers } from '../../services/resellerApi';
+import { fetchLinksByReseller } from '../../services/resellerProductApi';
 
 const COLORS = {
   primary: '#1E40AF',
@@ -27,18 +30,12 @@ const COLORS = {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.75;
 
-// NOTE: Replace this mock list with a Firebase query (Firestore or Realtime DB).
-// The number of sellers should come from the database (e.g., collection 'sellers').
-const INITIAL_DATA = Array.from({ length: 8 }).map((_, i) => ({
-  id: i.toString(),
-  name: 'Name Sample',
-  productCount: Math.floor(Math.random() * 50) + 5,
-}));
-
 export default function ResellerScreen() {
   const router = useRouter();
 
-  const [data, setData] = useState(INITIAL_DATA);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -49,16 +46,54 @@ export default function ResellerScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.96)).current;
 
+  // Fetch resellers from Firebase and include linked product counts
+  const loadResellers = async () => {
+    try {
+      setLoading(true);
+      const resellers = await fetchAllResellers();
+
+      const enhanced = await Promise.all(
+        resellers.map(async (r) => {
+          try {
+            const links = await fetchLinksByReseller(r.id);
+            const activeCount = Array.isArray(links) ? links.filter(l => l.isActive).length : 0;
+            return { ...r, productCount: activeCount };
+          } catch (err) {
+            return { ...r, productCount: 0 };
+          }
+        })
+      );
+
+      setData(enhanced);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch resellers:', err);
+      setError('Failed to load resellers. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadResellers();
+  }, []);
+
   const filteredData = useMemo(() => {
     let result = [...data].filter(item =>
-      item.name.toLowerCase().includes(search.toLowerCase())
+      (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
     );
 
     result.sort((a, b) => {
       if (sortBy === 'Name') {
-        return asc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        const nameA = (a.businessName || a.ownerName || '').toLowerCase();
+        const nameB = (b.businessName || b.ownerName || '').toLowerCase();
+        return asc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      } else if (sortBy === 'Products') {
+        const pa = a.productCount || 0;
+        const pb = b.productCount || 0;
+        return asc ? pa - pb : pb - pa;
       } else {
-        return asc ? a.productCount - b.productCount : b.productCount - a.productCount;
+        return asc ? (a.status || '').localeCompare(b.status || '') : (b.status || '').localeCompare(a.status || '');
       }
     });
 
@@ -99,21 +134,66 @@ export default function ResellerScreen() {
       }}
     >
       <View className="w-full h-32 bg-gray-100 rounded-lg mb-3 border border-gray-100" />
-      {/* seller name: populate from Firebase seller document (e.g., doc.data().name) */}
+      {/* Business name from Firebase */}
       <Text
         className="font-bold text-base mb-1"
         style={{ color: COLORS.primary, fontFamily: 'Inter' }}
         numberOfLines={1}
       >
-        {item.name}
+        {item.businessName || item.ownerName || 'N/A'}
       </Text>
+      {/* Product count */}
       <Text
-        className="text-xs text-gray-500"
+        className="text-xs text-gray-500 mb-1"
         style={{ fontFamily: 'Inter' }}
+        numberOfLines={1}
       >
-        {/* product quantity: derive from products collection/subcollection; display as 'product (qty)' */}
-        Products: {item.productCount} of prod
+        Products: {item.productCount ?? 0}
       </Text>
+      {/* Contact information */}
+      <Text
+        className="text-xs text-gray-500 mb-1"
+        style={{ fontFamily: 'Inter' }}
+        numberOfLines={1}
+      >
+        {item.contactNumber || 'No contact'}
+      </Text>
+      {/* Status badge */}
+      <View className="w-full flex-row items-center justify-between">
+        <Text
+          className="text-xs text-gray-600"
+          style={{ fontFamily: 'Inter' }}
+          numberOfLines={1}
+        >
+          {item.email || 'No email'}
+        </Text>
+        <View
+          className="px-2 py-1 rounded-full"
+          style={{
+            backgroundColor:
+              item.status === 'active'
+                ? '#D1FAE5'
+                : item.status === 'inactive'
+                ? '#FEE2E2'
+                : '#FEF3C7',
+          }}
+        >
+          <Text
+            className="text-xs font-semibold"
+            style={{
+              color:
+                item.status === 'active'
+                  ? '#065F46'
+                  : item.status === 'inactive'
+                  ? '#991B1B'
+                  : '#92400E',
+              fontFamily: 'Inter',
+            }}
+          >
+            {item.status || 'pending'}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -192,14 +272,48 @@ export default function ResellerScreen() {
             Seller
           </Text>
 
-          <FlatList
-            data={filteredData}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            numColumns={2}
-            contentContainerStyle={{ paddingBottom: 40, paddingRight: 16 }}
-            showsVerticalScrollIndicator={false}
-          />
+          {loading ? (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text className="mt-4 text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Loading resellers...
+              </Text>
+            </View>
+          ) : error ? (
+            <View className="flex-1 items-center justify-center px-5">
+              <MaterialCommunityIcons name="alert-circle" size={48} color="#EF4444" />
+              <Text className="mt-4 text-center text-red-600 font-semibold" style={{ fontFamily: 'Inter' }}>
+                {error}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  loadResellers();
+                }}
+                className="mt-6 px-6 py-3 rounded-lg"
+                style={{ backgroundColor: COLORS.primary }}
+              >
+                <Text className="text-white font-semibold" style={{ fontFamily: 'Inter' }}>
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : filteredData.length === 0 ? (
+            <View className="flex-1 items-center justify-center">
+              <MaterialCommunityIcons name="inbox-outline" size={48} color="#9CA3AF" />
+              <Text className="mt-4 text-gray-600" style={{ fontFamily: 'Inter' }}>
+                No resellers found
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredData}
+              renderItem={renderItem}
+              keyExtractor={item => item.id}
+              numColumns={2}
+              contentContainerStyle={{ paddingBottom: 40, paddingRight: 16 }}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </View>
       </View>
 
