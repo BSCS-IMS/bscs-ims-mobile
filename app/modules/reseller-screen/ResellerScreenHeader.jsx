@@ -11,7 +11,7 @@ export default function ResellerScreenHeader({
   setSearch,
   filterOpen,
   setFilterOpen,
-  sortBy = 'Name', // Set default here
+  sortBy, // Reverted to no default here
   setSortBy,
   asc,
   setAsc
@@ -61,11 +61,15 @@ export default function ResellerScreenHeader({
             key={option}
             onPress={() => setSortBy(option)}
             className={`px-4 py-1.5 rounded-full border ${
-              sortBy === option ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
+              sortBy === option
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-white border-gray-300'
             }`}
           >
             <Text
-              className={`text-sm font-semibold ${sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'}`}
+              className={`text-sm font-semibold ${
+                sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'
+              }`}
               style={{ fontFamily: 'Inter' }}
             >
               {option}
@@ -76,10 +80,15 @@ export default function ResellerScreenHeader({
         {/* Asc/Desc dropdown pill */}
         <TouchableOpacity
           onPress={() => setFilterOpen(!filterOpen)}
-          className='flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full'
+          className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+            sortBy ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
+          }`}
         >
           <MaterialCommunityIcons name={asc ? 'sort-ascending' : 'sort-descending'} size={14} color={COLORS.primary} />
-          <Text className='ml-1 text-sm font-semibold' style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
+          <Text
+            className={`ml-1 text-sm font-semibold ${sortBy ? 'text-[#2C5282]' : 'text-gray-500'}`}
+            style={{ fontFamily: 'Inter' }}
+          >
             {asc ? 'Asc' : 'Desc'}
           </Text>
           <MaterialCommunityIcons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={14} color={COLORS.primary} />
@@ -92,10 +101,10 @@ export default function ResellerScreenHeader({
                 setAsc(true)
                 setFilterOpen(false)
               }}
-              className={`py-2 px-3 rounded-md ${asc ? 'bg-blue-50' : ''}`}
+              className={`py-2 px-3 rounded-md ${sortBy && asc ? 'bg-blue-50' : ''}`}
             >
               <Text
-                className={`text-sm font-semibold ${asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
+                className={`text-sm font-semibold ${sortBy && asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Inter' }}
               >
                 Ascending
@@ -106,29 +115,31 @@ export default function ResellerScreenHeader({
                 setAsc(false)
                 setFilterOpen(false)
               }}
-              className={`py-2 px-3 rounded-md ${!asc ? 'bg-blue-50' : ''}`}
+              className={`py-2 px-3 rounded-md ${sortBy && !asc ? 'bg-blue-50' : ''}`}
             >
               <Text
-                className={`text-sm font-semibold ${!asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
+                className={`text-sm font-semibold ${sortBy && !asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Inter' }}
               >
                 Descending
               </Text>
             </TouchableOpacity>
-            {/* Clear option */}
-            <TouchableOpacity
-              onPress={() => {
-                setSortBy('Name')
-                setAsc(true)
-                setFilterOpen(false)
-              }}
-              className='py-2 px-3 rounded-md mt-1'
-            >
-              <Text className='text-sm font-semibold text-gray-600' style={{ fontFamily: 'Inter' }}>
-                Clear
-              </Text>
-            </TouchableOpacity>
           </View>
+        )}
+
+        {sortBy && (
+          <TouchableOpacity
+            onPress={() => {
+              setSortBy(null)
+              setAsc(true)
+              setFilterOpen(false)
+            }}
+            className='px-4 py-1.5 rounded-full border border-gray-300 bg-white'
+          >
+            <Text className='text-sm font-semibold text-gray-500' style={{ fontFamily: 'Inter' }}>
+              Clear
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </View>

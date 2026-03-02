@@ -21,7 +21,7 @@ export default function ResellerScreen() {
   const [search, setSearch] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [sortBy, setSortBy] = useState('Name')
+  const [sortBy, setSortBy] = useState(null)
   const [asc, setAsc] = useState(true)
 
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current
@@ -70,12 +70,16 @@ export default function ResellerScreen() {
       if (sortBy === 'Name') {
         const nameA = (a.businessName || a.ownerName || '').toLowerCase()
         const nameB = (b.businessName || b.ownerName || '').toLowerCase()
-        return asc ? nameA.localeCompare(nameB) : nameB.localeCompare(a.nameB) // Fixed typo: a.nameB to nameB
+        return asc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
       } else if (sortBy === 'Products') {
         const pa = a.productCount || 0
         const pb = b.productCount || 0
         return asc ? pa - pb : pb - pa
+      } else if (sortBy === null) {
+        // No specific sorting applied when sortBy is null, maintain original order or a stable default
+        return 0 // Keep original order if no specific sort criterion
       } else {
+        // Fallback for other sortBy values if any, or default to status sort
         return asc ? (a.status || '').localeCompare(b.status || '') : (b.status || '').localeCompare(a.status || '')
       }
     })
