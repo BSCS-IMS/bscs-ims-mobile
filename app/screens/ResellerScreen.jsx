@@ -145,7 +145,7 @@ export default function ResellerScreen() {
       </View>
 
       {/* Pagination Limit Dropdown at the bottom */}
-        <View className='flex-row justify-end items-center px-5 py-0 relative z-10'>
+        <View className='flex-row justify-end items-center px-5 mt-5 relative z-10'>
             <TouchableOpacity
                 onPress={() => setLimitOptionsOpen(!limitOptionsOpen)}
                 className='flex-row items-center px-3 py-1.5 rounded-full border border-gray-300 bg-white'
