@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, Image } from 'react-native';
 
 const COLORS = {
   primary: '#1E40AF',
@@ -21,7 +20,15 @@ export default function ResellerCard({ item }) {
         shadowRadius: 4,
       }}
     >
-      <View className="w-full h-32 bg-gray-100 rounded-lg mb-3 border border-gray-100" />
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          className="w-full h-32 rounded-lg mb-3"
+          resizeMode="cover"
+        />
+      ) : (
+        <View className="w-full h-32 bg-gray-100 rounded-lg mb-3 border border-gray-100" />
+      )}
       {/* Business name from Firebase */}
       <Text
         className="font-bold text-base mb-1"

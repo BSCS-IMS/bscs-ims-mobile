@@ -22,6 +22,7 @@ const RESELLER_FIELDS = [
   'notes',
   'ownerName',
   'status',
+  'imageUrl',
 ]
 
 /**
