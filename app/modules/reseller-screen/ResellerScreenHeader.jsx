@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native'
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons'
 
 const COLORS = {
-  primary: '#2C5282'
+  primary: '#1F384C'
 }
 
 export default function ResellerScreenHeader({
@@ -69,7 +69,7 @@ export default function ResellerScreenHeader({
             >
               <Text
                 className={`text-sm font-semibold ${
-                  sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'
+                  sortBy === option ? 'text-[#1F384C]' : 'text-gray-500'
                 }`}
                 style={{ fontFamily: 'Inter' }}
               >
@@ -87,7 +87,7 @@ export default function ResellerScreenHeader({
           >
             <MaterialCommunityIcons name={asc ? 'sort-ascending' : 'sort-descending'} size={14} color={COLORS.primary} />
             <Text
-              className={`ml-1 text-sm font-semibold ${sortBy ? 'text-[#2C5282]' : 'text-gray-500'}`}
+              className={`ml-1 text-sm font-semibold ${sortBy ? 'text-[#1F384C]' : 'text-gray-500'}`}
               style={{ fontFamily: 'Inter' }}
             >
               {asc ? 'Asc' : 'Desc'}
@@ -106,7 +106,7 @@ export default function ResellerScreenHeader({
               className={`py-2 px-3 rounded-md ${sortBy && asc ? 'bg-blue-50' : ''}`}
             >
               <Text
-                className={`text-sm font-semibold ${sortBy && asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
+                className={`text-sm font-semibold ${sortBy && asc ? 'text-[#1F384C]' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Inter' }}
               >
                 Ascending
@@ -120,7 +120,7 @@ export default function ResellerScreenHeader({
               className={`py-2 px-3 rounded-md ${sortBy && !asc ? 'bg-blue-50' : ''}`}
             >
               <Text
-                className={`text-sm font-semibold ${sortBy && !asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
+                className={`text-sm font-semibold ${sortBy && !asc ? 'text-[#1F384C]' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Inter' }}
               >
                 Descending

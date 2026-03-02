@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ResellerCard from './ResellerCard';
 
 const COLORS = {
-  primary: '#2C5282',
+  primary: '#1F384C',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

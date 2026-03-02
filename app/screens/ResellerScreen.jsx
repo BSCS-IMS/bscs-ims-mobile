@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { View, Text, Animated, Platform, StatusBar, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { fetchActiveResellersSortedByName } from '../../services/resellerApi'
 import { fetchLinksByReseller } from '../../services/resellerProductApi'
 
@@ -23,16 +24,17 @@ export default function ResellerScreen() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState(null)
   const [asc, setAsc] = useState(true)
-  const [limit, setLimit] = useState(10) // Changed limit to a state variable
+  const [limit, setLimit] = useState(10)
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null)
   const [hasMore, setHasMore] = useState(true)
+  const [limitOptionsOpen, setLimitOptionsOpen] = useState(false)
 
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.96)).current
 
   const loadResellers = async (loadMore = false) => {
-    if (!hasMore && loadMore) return // Prevent loading if no more items and trying to load more
+    if (!hasMore && loadMore) return
     setLoading(true)
     setError(null)
 
@@ -77,11 +79,10 @@ export default function ResellerScreen() {
   }
 
   useEffect(() => {
-    // When search, sortBy, asc, or limit changes, reset pagination and load first page
     setLastVisibleDoc(null)
     setHasMore(true)
     loadResellers(false)
-  }, [search, sortBy, asc, limit]) // Updated dependencies
+  }, [search, sortBy, asc, limit])
 
   const filteredData = useMemo(() => {
     if (sortBy === 'Products') {
@@ -93,10 +94,8 @@ export default function ResellerScreen() {
       })
       return result
     }
-    // If sortBy is 'Name' (already sorted by backend) or null (no sort)
-    // data is already in the correct state after loadResellers
     return data
-  }, [data, sortBy, asc]) // Updated dependencies
+  }, [data, sortBy, asc])
 
   useEffect(() => {
     Animated.parallel([
@@ -119,12 +118,12 @@ export default function ResellerScreen() {
   }, [menuOpen])
 
   return (
-    <SafeAreaView className='flex-1' style={{ backgroundColor: COLORS.background }}>
+    <SafeAreaView className='flex-1'>
       <StatusBar barStyle='dark-content' backgroundColor={COLORS.background} />
 
       <View style={{ paddingTop: Platform.OS === 'android' ? 30 : 0 }} />
 
-      <View className='flex-1 px-0'>
+      <View className='flex-1 px-0' style={{ backgroundColor: COLORS.background }}>
         <ResellerScreenHeader
           setMenuOpen={setMenuOpen}
           search={search}
@@ -135,8 +134,6 @@ export default function ResellerScreen() {
           setSortBy={setSortBy}
           asc={asc}
           setAsc={setAsc}
-          limit={limit}
-          setLimit={setLimit}
         />
 
         <ResellerListContainer
@@ -146,6 +143,41 @@ export default function ResellerScreen() {
           loadResellers={loadResellers}
         />
       </View>
+
+      {/* Pagination Limit Dropdown at the bottom */}
+        <View className='flex-row justify-end items-center px-5 py-0 relative z-10'>
+            <TouchableOpacity
+                onPress={() => setLimitOptionsOpen(!limitOptionsOpen)}
+                className='flex-row items-center px-3 py-1.5 rounded-full border border-gray-300 bg-white'
+            >
+                <Text className='ml-1 text-sm font-semibold text-gray-500' style={{ fontFamily: 'Inter' }}>
+                    {limit} items
+                </Text>
+                <MaterialCommunityIcons name={limitOptionsOpen ? 'chevron-up' : 'chevron-down'} size={14} color={COLORS.primary} />
+            </TouchableOpacity>
+
+            {limitOptionsOpen && (
+                <View className='absolute bottom-full right-5 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 w-36'>
+                    {[5, 10, 15, 25].map((option) => (
+                        <TouchableOpacity
+                            key={option}
+                            onPress={() => {
+                                setLimit(option)
+                                setLimitOptionsOpen(false)
+                            }}
+                            className={`py-2 px-3 rounded-md ${limit === option ? 'bg-blue-50' : ''}`}
+                        >
+                            <Text
+                                className={`text-sm font-semibold ${limit === option ? 'text-[#2C5282]' : 'text-gray-600'}`}
+                                style={{ fontFamily: 'Inter' }}
+                            >
+                                {option} items
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+        </View>
 
       <SideMenu
         menuOpen={menuOpen}

@@ -3,7 +3,7 @@ import { TouchableOpacity, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
-  primary: '#2C5282',
+  primary: '#1F384C',
 };
 
 export default function MenuItem({ icon, label, onPress }) {
