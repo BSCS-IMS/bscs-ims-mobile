@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ResellerCard from './ResellerCard';
 
 const COLORS = {
-  primary: '#1E40AF',
+  primary: '#1F384C',
 };
 
 export default function ResellerListContainer({ loading, error, filteredData, loadResellers }) {
