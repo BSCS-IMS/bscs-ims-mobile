@@ -60,8 +60,10 @@ export default function ResellerScreen() {
   }, [])
 
   const filteredData = useMemo(() => {
-    let result = [...data].filter((item) =>
-      (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
+    let result = [...data].filter(
+      (item) =>
+        item.status !== 'inactive' && // Filter out inactive resellers
+        (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
     )
 
     result.sort((a, b) => {
