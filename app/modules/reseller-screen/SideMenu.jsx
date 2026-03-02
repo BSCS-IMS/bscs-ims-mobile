@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import MenuItem from './MenuItem';
 
 const COLORS = {
-  primary: '#1F384C',
+  primary: '#2C5282',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

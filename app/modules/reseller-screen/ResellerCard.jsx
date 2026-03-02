@@ -1,7 +1,7 @@
 import { View, Text, Dimensions, Image } from 'react-native';
 
 const COLORS = {
-  primary: '#1F384C',
+  primary: '#2C5282',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

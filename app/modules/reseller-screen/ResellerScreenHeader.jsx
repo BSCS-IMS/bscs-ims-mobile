@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
-  primary: '#1F384C',
+  primary: '#2C5282',
 };
 
 export default function ResellerScreenHeader({ setMenuOpen, search, setSearch, filterOpen, setFilterOpen, sortBy, setSortBy, asc, setAsc }) {
@@ -14,9 +13,11 @@ export default function ResellerScreenHeader({ setMenuOpen, search, setSearch, f
         <View style={{ width: 28 }} />
 
         <View className="items-center">
-          <View className="w-16 h-16 rounded-full items-center justify-center mb-1" style={{ backgroundColor: COLORS.primary }}>
-            <Text className="text-white font-extrabold text-4xl" style={{ fontFamily: 'Inter' }}>M</Text>
-          </View>
+          <Image
+            source={require('../../../assets/LOGO_CLEAR.png')}
+            className="w-16 h-16 rounded-full mb-1"
+            resizeMode="contain"
+          />
           <Text className="font-bold text-lg" style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
             MURANG BIGAS
           </Text>
