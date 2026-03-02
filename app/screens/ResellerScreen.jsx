@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { View, Text, Animated, Platform, StatusBar, SafeAreaView, Dimensions } from 'react-native'
+import { View, Text, Animated, Platform, StatusBar, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native'
 import { fetchActiveResellersSortedByName } from '../../services/resellerApi'
 import { fetchLinksByReseller } from '../../services/resellerProductApi'
 
@@ -23,15 +23,30 @@ export default function ResellerScreen() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState(null)
   const [asc, setAsc] = useState(true)
+  const [limit, setLimit] = useState(10) // Changed limit to a state variable
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null)
+  const [hasMore, setHasMore] = useState(true)
 
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.96)).current
 
-  const loadResellers = async () => {
+  const loadResellers = async (loadMore = false) => {
+    if (!hasMore && loadMore) return // Prevent loading if no more items and trying to load more
+    setLoading(true)
+    setError(null)
+
     try {
-      setLoading(true)
-      const fetchedResellers = await fetchActiveResellersSortedByName({ sortBy, asc })
+      const {
+        resellers: fetchedResellers,
+        lastVisibleDoc: newLastVisibleDoc,
+        hasMore: newHasMore,
+      } = await fetchActiveResellersSortedByName({
+        sortBy,
+        asc,
+        limit,
+        lastVisibleDoc: loadMore ? lastVisibleDoc : null,
+      })
 
       const searchedResellers = fetchedResellers.filter(
         (item) =>
@@ -50,8 +65,9 @@ export default function ResellerScreen() {
         })
       )
 
-      setData(enhancedResellers)
-      setError(null)
+      setData((prevData) => (loadMore ? [...prevData, ...enhancedResellers] : enhancedResellers))
+      setLastVisibleDoc(newLastVisibleDoc)
+      setHasMore(newHasMore)
     } catch (err) {
       console.error('Error fetching resellers:', err)
       setError('Failed to load resellers. Please try again.')
@@ -61,8 +77,11 @@ export default function ResellerScreen() {
   }
 
   useEffect(() => {
-    loadResellers()
-  }, [search, sortBy, asc]) // Updated dependencies
+    // When search, sortBy, asc, or limit changes, reset pagination and load first page
+    setLastVisibleDoc(null)
+    setHasMore(true)
+    loadResellers(false)
+  }, [search, sortBy, asc, limit]) // Updated dependencies
 
   const filteredData = useMemo(() => {
     if (sortBy === 'Products') {
@@ -116,6 +135,8 @@ export default function ResellerScreen() {
           setSortBy={setSortBy}
           asc={asc}
           setAsc={setAsc}
+          limit={limit}
+          setLimit={setLimit}
         />
 
         <ResellerListContainer

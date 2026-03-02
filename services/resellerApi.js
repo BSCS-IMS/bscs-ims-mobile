@@ -10,7 +10,9 @@ import {
   addDoc,
   deleteDoc,
   Timestamp,
-  orderBy, // Added orderBy
+  orderBy,
+  limit, // Added limit
+  startAfter, // Added startAfter
 } from 'firebase/firestore'
 
 // Reseller fields
@@ -222,20 +224,24 @@ export const fetchProductsForResellerSubcollection = async (resellerId) => {
  * @param {boolean} [options.asc=true] - Ascending or Descending order
  * @returns {Promise<Array>} Array of active reseller documents
  */
-export const fetchActiveResellersSortedByName = async ({ sortBy = null, asc = true } = {}) => {
+export const fetchActiveResellersSortedByName = async ({ sortBy = null, asc = true, limit: queryLimit = 10, lastVisibleDoc = null } = {}) => {
   try {
     const resellersRef = collection(db, 'resellers')
     let q = query(resellersRef, where('status', '==', 'active'))
 
     if (sortBy === 'Name') {
-      // For sorting by name, we can choose businessName or ownerName.
-      // Firestore does not support sorting by two fields in a single orderBy
-      // without chaining orderBy calls which require indexing and specific query constraints.
-      // For simplicity, we'll sort by businessName. If businessName is null, it will sort by ownerName.
       q = query(q, orderBy('businessName', asc ? 'asc' : 'desc'))
-      // Note: If businessName can be null, documents with null businessName will come first/last
-      // depending on sort order. A secondary sort for ownerName would require specific indexes.
+    } else {
+      // Always need an orderBy for startAfter to work consistently,
+      // default to businessName if no specific sort is applied
+      q = query(q, orderBy('businessName', 'asc'))
     }
+
+    if (lastVisibleDoc) {
+      q = query(q, startAfter(lastVisibleDoc))
+    }
+
+    q = query(q, limit(queryLimit))
 
     const querySnapshot = await getDocs(q)
 
@@ -244,7 +250,10 @@ export const fetchActiveResellersSortedByName = async ({ sortBy = null, asc = tr
       ...doc.data(),
     }))
 
-    return resellers
+    const newLastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1]
+    const hasMore = querySnapshot.docs.length === queryLimit
+
+    return { resellers, lastVisibleDoc: newLastVisibleDoc, hasMore }
   } catch (error) {
     console.error('Error fetching active resellers sorted by name:', error)
     throw error
