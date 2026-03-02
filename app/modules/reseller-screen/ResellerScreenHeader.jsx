@@ -11,7 +11,7 @@ export default function ResellerScreenHeader({
   setSearch,
   filterOpen,
   setFilterOpen,
-  sortBy,
+  sortBy = 'Name', // Set default here
   setSortBy,
   asc,
   setAsc
@@ -42,19 +42,18 @@ export default function ResellerScreenHeader({
       </View>
 
       {/* Search Bar */}
-      <View className='bg-white rounded-full flex-row items-center px-4 py-3 shadow-sm border border-gray-200'>
-        <Ionicons name='search' size={16} color='#9CA3AF' />
+      <View className='bg-white rounded-full flex-row items-center px-4 py-2 shadow-sm border border-gray-200'>
+        <Ionicons name='search' size={20} color='#9CA3AF' className='ml-2' />
         <TextInput
           placeholder='Search'
           value={search}
           onChangeText={setSearch}
           multiline={false}
           scrollEnabled={false}
-          className='ml-2'
+          className='flex-1 text-sm text-gray-700'
         />
       </View>
 
-      {/* Filter */}
       {/* Filter */}
       <View className='mt-4 z-20 relative flex-row items-center gap-2'>
         {['Name', 'Products'].map((option) => (
@@ -62,11 +61,11 @@ export default function ResellerScreenHeader({
             key={option}
             onPress={() => setSortBy(option)}
             className={`px-4 py-1.5 rounded-full border ${
-              sortBy === option ? 'bg-[#2C5282] border-[#2C5282]' : 'bg-white border-gray-300'
+              sortBy === option ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
             }`}
           >
             <Text
-              className={`text-sm font-semibold ${sortBy === option ? 'text-white' : 'text-gray-500'}`}
+              className={`text-sm font-semibold ${sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'}`}
               style={{ fontFamily: 'Inter' }}
             >
               {option}
@@ -77,7 +76,7 @@ export default function ResellerScreenHeader({
         {/* Asc/Desc dropdown pill */}
         <TouchableOpacity
           onPress={() => setFilterOpen(!filterOpen)}
-          className='flex-row items-center bg-[#DBEAFE] px-3 py-1.5 rounded-full'
+          className='flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full'
         >
           <MaterialCommunityIcons name={asc ? 'sort-ascending' : 'sort-descending'} size={14} color={COLORS.primary} />
           <Text className='ml-1 text-sm font-semibold' style={{ color: COLORS.primary, fontFamily: 'Inter' }}>
@@ -93,7 +92,7 @@ export default function ResellerScreenHeader({
                 setAsc(true)
                 setFilterOpen(false)
               }}
-              className={`py-2 px-3 rounded-md ${asc ? 'bg-[#DBEAFE]' : ''}`}
+              className={`py-2 px-3 rounded-md ${asc ? 'bg-blue-50' : ''}`}
             >
               <Text
                 className={`text-sm font-semibold ${asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
@@ -107,13 +106,26 @@ export default function ResellerScreenHeader({
                 setAsc(false)
                 setFilterOpen(false)
               }}
-              className={`py-2 px-3 rounded-md ${!asc ? 'bg-[#DBEAFE]' : ''}`}
+              className={`py-2 px-3 rounded-md ${!asc ? 'bg-blue-50' : ''}`}
             >
               <Text
                 className={`text-sm font-semibold ${!asc ? 'text-[#2C5282]' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Inter' }}
               >
                 Descending
+              </Text>
+            </TouchableOpacity>
+            {/* Clear option */}
+            <TouchableOpacity
+              onPress={() => {
+                setSortBy('Name')
+                setAsc(true)
+                setFilterOpen(false)
+              }}
+              className='py-2 px-3 rounded-md mt-1'
+            >
+              <Text className='text-sm font-semibold text-gray-600' style={{ fontFamily: 'Inter' }}>
+                Clear
               </Text>
             </TouchableOpacity>
           </View>
