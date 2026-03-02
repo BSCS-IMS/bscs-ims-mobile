@@ -60,7 +60,7 @@ export default function ResellerScreenHeader({
           <TouchableOpacity
             key={option}
             onPress={() => setSortBy(option)}
-            className={`px-4 py-1.5 rounded-full border ${
+            className={`px-4 py-1.5 rounded-md border ${
               sortBy === option
                 ? 'bg-blue-50 border-blue-200'
                 : 'bg-white border-gray-300'
@@ -80,7 +80,7 @@ export default function ResellerScreenHeader({
         {/* Asc/Desc dropdown pill */}
         <TouchableOpacity
           onPress={() => setFilterOpen(!filterOpen)}
-          className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+          className={`flex-row items-center px-3 py-1.5 rounded-md border ${
             sortBy ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
           }`}
         >
@@ -134,7 +134,7 @@ export default function ResellerScreenHeader({
               setAsc(true)
               setFilterOpen(false)
             }}
-            className='px-4 py-1.5 rounded-full border border-gray-300 bg-white'
+            className='px-4 py-1.5 rounded-md border border-gray-300 bg-white'
           >
             <Text className='text-sm font-semibold text-gray-500' style={{ fontFamily: 'Inter' }}>
               Clear
