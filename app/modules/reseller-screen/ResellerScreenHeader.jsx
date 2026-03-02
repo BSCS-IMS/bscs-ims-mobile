@@ -55,44 +55,46 @@ export default function ResellerScreenHeader({
       </View>
 
       {/* Filter */}
-      <View className='mt-4 z-20 relative flex-row items-center gap-2'>
-        {['Name', 'Products'].map((option) => (
+      <View className='mt-4 z-20 relative flex-row items-center justify-between'>
+        <View className='flex-row items-center gap-2'>
+          {['Name', 'Products'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => setSortBy(option)}
+              className={`px-4 py-1.5 rounded-full border ${
+                sortBy === option
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text
+                className={`text-sm font-semibold ${
+                  sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'
+                }`}
+                style={{ fontFamily: 'Inter' }}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {/* Asc/Desc dropdown pill */}
           <TouchableOpacity
-            key={option}
-            onPress={() => setSortBy(option)}
-            className={`px-4 py-1.5 rounded-md border ${
-              sortBy === option
-                ? 'bg-blue-50 border-blue-200'
-                : 'bg-white border-gray-300'
+            onPress={() => setFilterOpen(!filterOpen)}
+            className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+              sortBy ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
             }`}
           >
+            <MaterialCommunityIcons name={asc ? 'sort-ascending' : 'sort-descending'} size={14} color={COLORS.primary} />
             <Text
-              className={`text-sm font-semibold ${
-                sortBy === option ? 'text-[#2C5282]' : 'text-gray-500'
-              }`}
+              className={`ml-1 text-sm font-semibold ${sortBy ? 'text-[#2C5282]' : 'text-gray-500'}`}
               style={{ fontFamily: 'Inter' }}
             >
-              {option}
+              {asc ? 'Asc' : 'Desc'}
             </Text>
+            <MaterialCommunityIcons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={14} color={COLORS.primary} />
           </TouchableOpacity>
-        ))}
-
-        {/* Asc/Desc dropdown pill */}
-        <TouchableOpacity
-          onPress={() => setFilterOpen(!filterOpen)}
-          className={`flex-row items-center px-3 py-1.5 rounded-md border ${
-            sortBy ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-300'
-          }`}
-        >
-          <MaterialCommunityIcons name={asc ? 'sort-ascending' : 'sort-descending'} size={14} color={COLORS.primary} />
-          <Text
-            className={`ml-1 text-sm font-semibold ${sortBy ? 'text-[#2C5282]' : 'text-gray-500'}`}
-            style={{ fontFamily: 'Inter' }}
-          >
-            {asc ? 'Asc' : 'Desc'}
-          </Text>
-          <MaterialCommunityIcons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={14} color={COLORS.primary} />
-        </TouchableOpacity>
+        </View>
 
         {filterOpen && (
           <View className='absolute top-9 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 w-36'>

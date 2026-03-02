@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { View, Text, Animated, Platform, StatusBar, SafeAreaView, Dimensions } from 'react-native'
-import { fetchAllResellers } from '../../services/resellerApi'
+import { fetchActiveResellersSortedByName } from '../../services/resellerApi'
 import { fetchLinksByReseller } from '../../services/resellerProductApi'
 
 import ResellerScreenHeader from '../modules/reseller-screen/ResellerScreenHeader'
@@ -31,10 +31,15 @@ export default function ResellerScreen() {
   const loadResellers = async () => {
     try {
       setLoading(true)
-      const resellers = await fetchAllResellers()
+      const fetchedResellers = await fetchActiveResellersSortedByName({ sortBy, asc })
 
-      const enhanced = await Promise.all(
-        resellers.map(async (r) => {
+      const searchedResellers = fetchedResellers.filter(
+        (item) =>
+          (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
+      )
+
+      const enhancedResellers = await Promise.all(
+        searchedResellers.map(async (r) => {
           try {
             const links = await fetchLinksByReseller(r.id)
             const activeCount = Array.isArray(links) ? links.filter((l) => l.isActive).length : 0
@@ -45,10 +50,10 @@ export default function ResellerScreen() {
         })
       )
 
-      setData(enhanced)
+      setData(enhancedResellers)
       setError(null)
     } catch (err) {
-      console.error('Failed to fetch resellers:', err)
+      console.error('Error fetching resellers:', err)
       setError('Failed to load resellers. Please try again.')
     } finally {
       setLoading(false)
@@ -57,35 +62,22 @@ export default function ResellerScreen() {
 
   useEffect(() => {
     loadResellers()
-  }, [])
+  }, [search, sortBy, asc]) // Updated dependencies
 
   const filteredData = useMemo(() => {
-    let result = [...data].filter(
-      (item) =>
-        item.status !== 'inactive' && // Filter out inactive resellers
-        (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
-    )
-
-    result.sort((a, b) => {
-      if (sortBy === 'Name') {
-        const nameA = (a.businessName || a.ownerName || '').toLowerCase()
-        const nameB = (b.businessName || b.ownerName || '').toLowerCase()
-        return asc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
-      } else if (sortBy === 'Products') {
+    if (sortBy === 'Products') {
+      const result = [...data]
+      result.sort((a, b) => {
         const pa = a.productCount || 0
         const pb = b.productCount || 0
         return asc ? pa - pb : pb - pa
-      } else if (sortBy === null) {
-        // No specific sorting applied when sortBy is null, maintain original order or a stable default
-        return 0 // Keep original order if no specific sort criterion
-      } else {
-        // Fallback for other sortBy values if any, or default to status sort
-        return asc ? (a.status || '').localeCompare(b.status || '') : (b.status || '').localeCompare(a.status || '')
-      }
-    })
-
-    return result
-  }, [data, search, sortBy, asc])
+      })
+      return result
+    }
+    // If sortBy is 'Name' (already sorted by backend) or null (no sort)
+    // data is already in the correct state after loadResellers
+    return data
+  }, [data, sortBy, asc]) // Updated dependencies
 
   useEffect(() => {
     Animated.parallel([

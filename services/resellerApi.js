@@ -10,6 +10,7 @@ import {
   addDoc,
   deleteDoc,
   Timestamp,
+  orderBy, // Added orderBy
 } from 'firebase/firestore'
 
 // Reseller fields
@@ -209,6 +210,43 @@ export const fetchProductsForResellerSubcollection = async (resellerId) => {
     return querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
   } catch (error) {
     console.error('Error fetching products for reseller subcollection:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch active resellers with optional sorting by name.
+ * Does not handle search or product count sorting due to Firestore limitations.
+ * @param {Object} options - Filtering and sorting options
+ * @param {string} [options.sortBy=null] - Field to sort by ('Name')
+ * @param {boolean} [options.asc=true] - Ascending or Descending order
+ * @returns {Promise<Array>} Array of active reseller documents
+ */
+export const fetchActiveResellersSortedByName = async ({ sortBy = null, asc = true } = {}) => {
+  try {
+    const resellersRef = collection(db, 'resellers')
+    let q = query(resellersRef, where('status', '==', 'active'))
+
+    if (sortBy === 'Name') {
+      // For sorting by name, we can choose businessName or ownerName.
+      // Firestore does not support sorting by two fields in a single orderBy
+      // without chaining orderBy calls which require indexing and specific query constraints.
+      // For simplicity, we'll sort by businessName. If businessName is null, it will sort by ownerName.
+      q = query(q, orderBy('businessName', asc ? 'asc' : 'desc'))
+      // Note: If businessName can be null, documents with null businessName will come first/last
+      // depending on sort order. A secondary sort for ownerName would require specific indexes.
+    }
+
+    const querySnapshot = await getDocs(q)
+
+    const resellers = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+
+    return resellers
+  } catch (error) {
+    console.error('Error fetching active resellers sorted by name:', error)
     throw error
   }
 }
