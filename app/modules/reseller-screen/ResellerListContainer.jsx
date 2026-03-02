@@ -1,11 +1,36 @@
 import React from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ResellerCard from './ResellerCard';
 
 const COLORS = {
   primary: '#2C5282',
 };
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const ResellerCardSkeleton = () => (
+  <View
+    className="bg-white rounded-xl p-3 mb-4 shadow-sm"
+    style={{
+      width: (SCREEN_WIDTH / 2) - 24,
+      marginLeft: 16,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    }}
+  >
+    {/* Image placeholder */}
+    <View className="w-full h-32 bg-gray-200 rounded-lg mb-3" />
+    {/* Text placeholders */}
+    <View className="h-4 bg-gray-200 rounded mb-1 w-3/4" />
+    <View className="h-4 bg-gray-200 rounded mb-1 w-1/2" />
+    <View className="h-4 bg-gray-200 rounded mb-1 w-2/3" />
+    <View className="h-4 bg-gray-200 rounded w-1/4" />
+  </View>
+);
 
 export default function ResellerListContainer({ loading, error, filteredData, loadResellers }) {
   const renderItem = ({ item }) => <ResellerCard item={item} />;
@@ -17,12 +42,14 @@ export default function ResellerListContainer({ loading, error, filteredData, lo
       </Text>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text className="mt-4 text-gray-600" style={{ fontFamily: 'Inter' }}>
-            Loading resellers...
-          </Text>
-        </View>
+        <FlatList
+          data={[1, 2, 3, 4]} // Dummy data for 4 skeleton cards
+          renderItem={() => <ResellerCardSkeleton />}
+          keyExtractor={(item) => item.toString()}
+          numColumns={2}
+          contentContainerStyle={{ paddingBottom: 40, paddingRight: 16 }}
+          showsVerticalScrollIndicator={false}
+        />
       ) : error ? (
         <View className="flex-1 items-center justify-center px-5">
           <MaterialCommunityIcons name="alert-circle" size={48} color="#EF4444" />
