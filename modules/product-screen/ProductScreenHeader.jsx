@@ -8,7 +8,6 @@ export default function ProductScreenHeader({
   filterOpen, setFilterOpen,
   sortBy, setSortBy,
   asc, setAsc,
-  statusFilter, setStatusFilter,
 }) {
   return (
     <View style={s.root}>
@@ -36,24 +35,11 @@ export default function ProductScreenHeader({
         )}
       </View>
 
-      {/* Status + sort row */}
+      {/* Sort row */}
       <View style={s.filterRow}>
         <View style={s.pillGroup}>
-          {/* Status */}
-          {['all', 'active', 'inactive'].map((sf) => (
-            <TouchableOpacity
-              key={sf}
-              onPress={() => setStatusFilter(sf)}
-              style={[s.pill, statusFilter === sf && s.pillActive]}
-            >
-              <Text style={[s.pillText, statusFilter === sf && s.pillTextActive]}>
-                {sf.charAt(0).toUpperCase() + sf.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-
           {/* Sort */}
-          {['Name', 'Price', 'Qty'].map((opt) => (
+          {['Price', 'Qty'].map((opt) => (
             <TouchableOpacity
               key={opt}
               onPress={() => setSortBy(sortBy === opt ? null : opt)}
@@ -84,6 +70,15 @@ export default function ProductScreenHeader({
             />
           </TouchableOpacity>
         </View>
+
+        {sortBy && (
+          <TouchableOpacity
+            onPress={() => { setSortBy(null); setAsc(true); setFilterOpen(false) }}
+            style={s.clearBtn}
+          >
+            <Text style={s.clearText}>Clear</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Asc/Desc dropdown */}
@@ -154,12 +149,12 @@ const s = StyleSheet.create({
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   pillGroup: {
     flexDirection: 'row',
     gap: 6,
     flexWrap: 'wrap',
-    flex: 1,
   },
   pill: {
     paddingHorizontal: 10,
@@ -184,6 +179,19 @@ const s = StyleSheet.create({
   },
   pillTextActive: {
     color: NAVY,
+  },
+  clearBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+  },
+  clearText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   dropdown: {
     marginTop: 8,

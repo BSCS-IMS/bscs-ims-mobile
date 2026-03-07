@@ -43,6 +43,23 @@ export const fetchAllProducts = async () => {
 }
 
 /**
+ * Fetch only active products (top-level `products` collection)
+ * @returns {Promise<Array>} Array of active product documents
+ */
+export const fetchActiveProducts = async () => {
+  try {
+    const productsRef = collection(db, 'products')
+    const q = query(productsRef, where('isActive', '==', true))
+    const querySnapshot = await getDocs(q)
+
+    return querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch (error) {
+    console.error('Error fetching active products:', error)
+    throw error
+  }
+}
+
+/**
  * Fetch a single product by ID (top-level)
  */
 export const fetchProductById = async (productId) => {

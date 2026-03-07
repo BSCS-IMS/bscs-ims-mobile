@@ -16,6 +16,7 @@ export default function ResellersScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState(null)
   const [asc, setAsc] = useState(true)
@@ -27,6 +28,15 @@ export default function ResellersScreen() {
 
   const [selectedReseller, setSelectedReseller] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [search])
 
   const loadResellers = async (loadMore = false) => {
     if (!hasMore && loadMore) return
@@ -46,7 +56,7 @@ export default function ResellersScreen() {
       })
 
       const searchedResellers = fetchedResellers.filter((item) =>
-        (item.businessName || item.ownerName || '').toLowerCase().includes(search.toLowerCase())
+        (item.businessName || item.ownerName || '').toLowerCase().includes(debouncedSearch.toLowerCase())
       )
 
       const enhancedResellers = await Promise.all(
@@ -76,7 +86,7 @@ export default function ResellersScreen() {
     setLastVisibleDoc(null)
     setHasMore(true)
     loadResellers(false)
-  }, [search, sortBy, asc, limit])
+  }, [debouncedSearch, sortBy, asc, limit])
 
   const filteredData = useMemo(() => {
     if (sortBy === 'Products') {

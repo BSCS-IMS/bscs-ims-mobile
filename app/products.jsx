@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { View, SafeAreaView, StatusBar, Platform, TouchableOpacity, Text } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { fetchAllProducts } from '../services/productApi'
+import { fetchActiveProducts } from '../services/productApi'
 
 import ProductScreenHeader from '../modules/product-screen/ProductScreenHeader'
 import ProductListContainer from '../modules/product-screen/ProductListContainer'
@@ -15,7 +15,7 @@ export default function ProductsScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState(null)
   const [asc, setAsc] = useState(true)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -26,11 +26,20 @@ export default function ProductsScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [search])
+
   const loadProducts = async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchAllProducts()
+      const data = await fetchActiveProducts()
       setAllProducts(data)
     } catch (err) {
       console.error('Error fetching products:', err)
@@ -53,24 +62,12 @@ export default function ProductsScreen() {
   const displayedProducts = useMemo(() => {
     let result = [...allProducts]
 
-    if (statusFilter === 'active') {
-      result = result.filter((p) => p.isActive === true || p.status === 'active')
-    } else if (statusFilter === 'inactive') {
-      result = result.filter((p) => p.isActive === false || p.status === 'inactive')
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase()
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       result = result.filter((p) => (p.name || '').toLowerCase().includes(q))
     }
 
-    if (sortBy === 'Name') {
-      result.sort((a, b) => {
-        const na = (a.name || '').toLowerCase()
-        const nb = (b.name || '').toLowerCase()
-        return asc ? na.localeCompare(nb) : nb.localeCompare(na)
-      })
-    } else if (sortBy === 'Price') {
+    if (sortBy === 'Price') {
       result.sort((a, b) =>
         asc ? (a.currentPrice ?? 0) - (b.currentPrice ?? 0) : (b.currentPrice ?? 0) - (a.currentPrice ?? 0)
       )
@@ -81,7 +78,7 @@ export default function ProductsScreen() {
     }
 
     return result.slice(0, pageSize)
-  }, [allProducts, statusFilter, search, sortBy, asc, pageSize])
+  }, [allProducts, debouncedSearch, sortBy, asc, pageSize])
 
   const handleCardPress = (product) => {
     setSelectedProduct(product)
@@ -103,8 +100,6 @@ export default function ProductsScreen() {
           setSortBy={setSortBy}
           asc={asc}
           setAsc={setAsc}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
         />
 
         <View style={{ flex: 1 }}>
@@ -139,7 +134,7 @@ export default function ProductsScreen() {
                 className='bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-36'
                 style={{ position: 'absolute', bottom: 40, right: 0 }}
               >
-                {[10, 25, 50].map((option) => (
+                {[5, 10, 15, 25].map((option) => (
                   <TouchableOpacity
                     key={option}
                     onPress={() => {
