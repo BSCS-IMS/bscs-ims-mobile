@@ -38,7 +38,7 @@ export default function ResellerScreenHeader({
       {/* Filter row */}
       <View style={s.filterRow}>
         <View style={s.pillGroup}>
-          {['Name', 'Products'].map((opt) => (
+          {['Name'].map((opt) => (
             <TouchableOpacity
               key={opt}
               onPress={() => setSortBy(sortBy === opt ? null : opt)}

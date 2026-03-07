@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, Platform, StatusBar, SafeAreaView, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { fetchActiveResellersSortedByName } from '../services/resellerApi'
-import { fetchLinksByReseller } from '../services/resellerProductApi'
 
 import ResellerScreenHeader from '../modules/reseller-screen/ResellerScreenHeader'
 import ResellerListContainer from '../modules/reseller-screen/ResellerListContainer'
@@ -59,19 +58,7 @@ export default function ResellersScreen() {
         (item.businessName || item.ownerName || '').toLowerCase().includes(debouncedSearch.toLowerCase())
       )
 
-      const enhancedResellers = await Promise.all(
-        searchedResellers.map(async (r) => {
-          try {
-            const links = await fetchLinksByReseller(r.id)
-            const activeCount = Array.isArray(links) ? links.filter((l) => l.isActive).length : 0
-            return { ...r, productCount: activeCount }
-          } catch {
-            return { ...r, productCount: 0 }
-          }
-        })
-      )
-
-      setData((prev) => (loadMore ? [...prev, ...enhancedResellers] : enhancedResellers))
+      setData((prev) => (loadMore ? [...prev, ...searchedResellers] : searchedResellers))
       setLastVisibleDoc(newLastVisibleDoc)
       setHasMore(newHasMore)
     } catch (err) {
@@ -87,19 +74,6 @@ export default function ResellersScreen() {
     setHasMore(true)
     loadResellers(false)
   }, [debouncedSearch, sortBy, asc, limit])
-
-  const filteredData = useMemo(() => {
-    if (sortBy === 'Products') {
-      const result = [...data]
-      result.sort((a, b) => {
-        const pa = a.productCount || 0
-        const pb = b.productCount || 0
-        return asc ? pa - pb : pb - pa
-      })
-      return result
-    }
-    return data
-  }, [data, sortBy, asc])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -135,7 +109,7 @@ export default function ResellersScreen() {
           <ResellerListContainer
             loading={loading}
             error={error}
-            filteredData={filteredData}
+            filteredData={data}
             loadResellers={loadResellers}
             onCardPress={handleCardPress}
             refreshing={refreshing}
