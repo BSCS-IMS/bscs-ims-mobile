@@ -39,7 +39,7 @@ export default function ProductScreenHeader({
       <View style={s.filterRow}>
         <View style={s.pillGroup}>
           {/* Sort */}
-          {['Price', 'Qty'].map((opt) => (
+          {['Name', 'Price', 'Quantity'].map((opt) => (
             <TouchableOpacity
               key={opt}
               onPress={() => setSortBy(sortBy === opt ? null : opt)}

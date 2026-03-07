@@ -11,6 +11,9 @@ import {
   deleteDoc,
   Timestamp,
   collectionGroup,
+  orderBy,
+  limit,
+  startAfter,
 } from 'firebase/firestore'
 
 // Product fields
@@ -55,6 +58,67 @@ export const fetchActiveProducts = async () => {
     return querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
   } catch (error) {
     console.error('Error fetching active products:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch active products with optional sorting and pagination
+ * @param {Object} options - Filtering, sorting, and pagination options
+ * @param {string} [options.sortBy=null] - Field to sort by ('Name', 'Price', 'Quantity')
+ * @param {boolean} [options.asc=true] - Ascending or Descending order
+ * @param {number} [options.limit=10] - Number of products to fetch
+ * @param {DocumentSnapshot} [options.lastVisibleDoc=null] - Last document from previous query for pagination
+ * @returns {Promise<Object>} Object containing products array, lastVisibleDoc, and hasMore flag
+ */
+export const fetchActiveProductsSorted = async ({
+  sortBy = null,
+  asc = true,
+  limit: queryLimit = 10,
+  lastVisibleDoc = null
+} = {}) => {
+  try {
+    const productsRef = collection(db, 'products')
+    let q = query(productsRef, where('isActive', '==', true))
+
+    // Map sortBy to actual field names
+    let sortField = 'name' // default sort
+    if (sortBy === 'Name') {
+      sortField = 'name'
+    } else if (sortBy === 'Price') {
+      sortField = 'currentPrice'
+    } else if (sortBy === 'Quantity') {
+      sortField = 'quantity'
+    }
+
+    // Apply sorting
+    if (sortBy) {
+      q = query(q, orderBy(sortField, asc ? 'asc' : 'desc'))
+    } else {
+      // Always need an orderBy for startAfter to work consistently
+      q = query(q, orderBy('name', 'asc'))
+    }
+
+    // Apply pagination
+    if (lastVisibleDoc) {
+      q = query(q, startAfter(lastVisibleDoc))
+    }
+
+    q = query(q, limit(queryLimit))
+
+    const querySnapshot = await getDocs(q)
+
+    const products = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+
+    const newLastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1]
+    const hasMore = querySnapshot.docs.length === queryLimit
+
+    return { products, lastVisibleDoc: newLastVisibleDoc, hasMore }
+  } catch (error) {
+    console.error('Error fetching active products sorted:', error)
     throw error
   }
 }
