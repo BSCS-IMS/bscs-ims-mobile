@@ -1,13 +1,34 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView } from 'react-native'
+import React, { useEffect, useState, useRef } from 'react'
+import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView, TouchableOpacity } from 'react-native'
 import { fetchAllProducts } from '../services/productApi'
 import { fetchActiveResellersSortedByName } from '../services/resellerApi'
+import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
+import Toast from '../components/Toast'
 
 const NAVY = '#1F384C'
+
+const formatTimestamp = (timestamp) => {
+  if (!timestamp) return ''
+
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }
+  return date.toLocaleString('en-US', options)
+}
 
 export default function HomeScreen() {
   const [productCount, setProductCount] = useState(null)
   const [resellerCount, setResellerCount] = useState(null)
+  const [announcements, setAnnouncements] = useState([])
+  const [totalAnnouncements, setTotalAnnouncements] = useState(0)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const previousAnnouncementIds = useRef(new Set())
 
   useEffect(() => {
     fetchAllProducts()
@@ -17,12 +38,46 @@ export default function HomeScreen() {
     fetchActiveResellersSortedByName({ limit: 100 })
       .then(({ resellers }) => setResellerCount(resellers.length))
       .catch(() => setResellerCount('—'))
+
+    // Get total count of announcements
+    getPublishedAnnouncementsCount()
+      .then((count) => setTotalAnnouncements(count))
+      .catch((err) => console.error('Failed to get announcement count:', err))
+
+    // Subscribe to real-time announcements
+    const unsubscribe = subscribeToPublishedAnnouncements(5, (data) => {
+      // Check for new announcements
+      if (previousAnnouncementIds.current.size > 0 && data.length > 0) {
+        const newAnnouncements = data.filter(
+          (announcement) => !previousAnnouncementIds.current.has(announcement.id)
+        )
+
+        if (newAnnouncements.length > 0) {
+          setToastMessage('New announcement posted!')
+          setShowToast(true)
+        }
+      }
+
+      // Update the set of announcement IDs
+      previousAnnouncementIds.current = new Set(data.map((a) => a.id))
+      setAnnouncements(data)
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   return (
     <SafeAreaView className='flex-1 bg-slate-50'>
       <StatusBar barStyle='dark-content' backgroundColor='#F8FAFC' />
       <View style={{ paddingTop: Platform.OS === 'android' ? 30 : 0 }} />
+
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+      />
 
       <ScrollView className='flex-1 px-5' showsVerticalScrollIndicator={false}>
         {/* Header */}
@@ -73,26 +128,47 @@ export default function HomeScreen() {
         <View className='mb-6'>
           <Text className='text-lg font-bold text-slate-900 mb-3'>Announcements</Text>
 
-          {[
-            { title: 'Price update for Bigas Dinorado', time: 'Today' },
-            { title: 'New reseller onboarded: Marilou Store', time: 'Yesterday' },
-            { title: 'Monthly inventory check scheduled', time: '2 days ago' },
-          ].map((item, index) => (
-            <View
-              key={index}
-              className='bg-white rounded-xl px-4 py-4 mb-3 border border-gray-100'
-              style={{
-                elevation: 1,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 2,
-              }}
-            >
-              <Text className='text-sm font-semibold text-slate-800 mb-1'>{item.title}</Text>
-              <Text className='text-xs text-slate-400'>{item.time}</Text>
+          {announcements.length === 0 ? (
+            <View className='bg-white rounded-xl px-4 py-6 border border-gray-100'>
+              <Text className='text-sm text-slate-400 text-center'>No announcements yet</Text>
             </View>
-          ))}
+          ) : (
+            <>
+              {announcements.map((item) => (
+                <View
+                  key={item.id}
+                  className='bg-white rounded-xl px-4 py-4 mb-3 border border-gray-100'
+                  style={{
+                    elevation: 1,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 2,
+                  }}
+                >
+                  <Text className='text-sm font-semibold text-slate-800 mb-1'>{item.title}</Text>
+                  <Text className='text-xs text-slate-600 mb-2' numberOfLines={3}>
+                    {item.content}
+                  </Text>
+                  <Text className='text-xs text-slate-400'>{formatTimestamp(item.publishAt)}</Text>
+                </View>
+              ))}
+
+              {totalAnnouncements > 5 && (
+                <TouchableOpacity
+                  className='items-center py-2'
+                  onPress={() => {
+                    // TODO: Navigate to full announcements page
+                    console.log('View more announcements')
+                  }}
+                >
+                  <Text className='text-sm font-semibold' style={{ color: NAVY }}>
+                    View more announcements
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
 
         <View style={{ height: 24 }} />
