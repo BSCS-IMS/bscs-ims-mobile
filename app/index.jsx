@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView, TouchableOpacity } from 'react-native'
 import { fetchAllProducts } from '../services/productApi'
 import { fetchActiveResellersSortedByName } from '../services/resellerApi'
 import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
-import Toast from '../components/Toast'
 
 const NAVY = '#1F384C'
 
@@ -26,9 +25,6 @@ export default function HomeScreen() {
   const [resellerCount, setResellerCount] = useState(null)
   const [announcements, setAnnouncements] = useState([])
   const [totalAnnouncements, setTotalAnnouncements] = useState(0)
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
-  const previousAnnouncementIds = useRef(new Set())
 
   useEffect(() => {
     fetchAllProducts()
@@ -44,22 +40,8 @@ export default function HomeScreen() {
       .then((count) => setTotalAnnouncements(count))
       .catch((err) => console.error('Failed to get announcement count:', err))
 
-    // Subscribe to real-time announcements
+    // Subscribe to real-time announcements for display
     const unsubscribe = subscribeToPublishedAnnouncements(5, (data) => {
-      // Check for new announcements
-      if (previousAnnouncementIds.current.size > 0 && data.length > 0) {
-        const newAnnouncements = data.filter(
-          (announcement) => !previousAnnouncementIds.current.has(announcement.id)
-        )
-
-        if (newAnnouncements.length > 0) {
-          setToastMessage('New announcement posted!')
-          setShowToast(true)
-        }
-      }
-
-      // Update the set of announcement IDs
-      previousAnnouncementIds.current = new Set(data.map((a) => a.id))
       setAnnouncements(data)
     })
 
@@ -72,12 +54,6 @@ export default function HomeScreen() {
     <SafeAreaView className='flex-1 bg-slate-50'>
       <StatusBar barStyle='dark-content' backgroundColor='#F8FAFC' />
       <View style={{ paddingTop: Platform.OS === 'android' ? 30 : 0 }} />
-
-      <Toast
-        visible={showToast}
-        message={toastMessage}
-        onHide={() => setShowToast(false)}
-      />
 
       <ScrollView className='flex-1 px-5' showsVerticalScrollIndicator={false}>
         {/* Header */}

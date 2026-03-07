@@ -2,14 +2,21 @@ import '../global.css'
 import { Tabs } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { ToastProvider, useToast } from '../contexts/ToastContext'
+import Toast from '../components/Toast'
+import AnnouncementListener from '../components/AnnouncementListener'
 
 const NAVY = '#1F384C'
 const INACTIVE = '#94A3B8'
 
-export default function Layout() {
+function TabsLayout() {
+  const { showToast, toastMessage, hideToast } = useToast()
+
   return (
     <>
       <StatusBar style='dark' />
+      <AnnouncementListener />
+      <Toast visible={showToast} message={toastMessage} onHide={hideToast} />
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -56,5 +63,13 @@ export default function Layout() {
 
       </Tabs>
     </>
+  )
+}
+
+export default function Layout() {
+  return (
+    <ToastProvider>
+      <TabsLayout />
+    </ToastProvider>
   )
 }
