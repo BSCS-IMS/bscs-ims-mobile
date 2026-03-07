@@ -65,7 +65,7 @@ export default function ProductModal({ visible, item, onClose }) {
 
             {/* Image */}
             {item?.imageUrl ? (
-              <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='cover' />
+              <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='contain' />
             ) : (
               <View style={[s.image, s.imagePlaceholder]}>
                 <MaterialCommunityIcons name='package-variant-closed' size={44} color='#CBD5E1' />

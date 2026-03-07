@@ -81,7 +81,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
     color: '#1E293B',
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 20,
   },
   listContent: {
     paddingHorizontal: 12,

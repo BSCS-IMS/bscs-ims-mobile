@@ -18,7 +18,7 @@ export default function ProductCard({ item, onPress }) {
     <TouchableOpacity style={[s.card, { width: cardWidth }]} onPress={() => onPress?.(item)} activeOpacity={0.75}>
       {/* Image */}
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='cover' />
+        <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='contain' />
       ) : (
         <View style={[s.image, s.imagePlaceholder]}>
           <MaterialCommunityIcons name='package-variant-closed' size={28} color='#CBD5E1' />
