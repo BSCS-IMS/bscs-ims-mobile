@@ -5,7 +5,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { ToastProvider, useToast } from '../contexts/ToastContext'
 import Toast from '../components/Toast'
 import AnnouncementListener from '../components/AnnouncementListener'
-
+import AppSplashScreen from '../components/AppSplashScreen'
+import { useState } from 'react'
 const NAVY = '#1F384C'
 const INACTIVE = '#94A3B8'
 
@@ -67,9 +68,12 @@ function TabsLayout() {
 }
 
 export default function Layout() {
+  const [isSplashVisible, setSplashVisible] = useState(true)
+
   return (
     <ToastProvider>
       <TabsLayout />
+      {isSplashVisible && <AppSplashScreen onFinish={() => setSplashVisible(false)} />}
     </ToastProvider>
   )
 }
