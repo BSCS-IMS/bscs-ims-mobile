@@ -61,7 +61,10 @@ function TabsLayout() {
             ),
           }}
         />
-
+        <Tabs.Screen
+          name='announcements'
+          options={{ href: null, title: 'Announcements' }}
+        />
       </Tabs>
     </>
   )

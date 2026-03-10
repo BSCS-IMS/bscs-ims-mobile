@@ -65,6 +65,30 @@ export const subscribeToPublishedAnnouncements = (limitCount = 10, onUpdate) => 
 }
 
 /**
+ * Fetch all published announcements ordered by most recent (no limit)
+ * @returns {Promise<Array>} Array of all published announcement documents
+ */
+export const fetchAllPublishedAnnouncements = async () => {
+  try {
+    const announcementsRef = collection(db, 'announcements')
+    const q = query(
+      announcementsRef,
+      where('isPublished', '==', true),
+      orderBy('publishAt', 'desc')
+    )
+    const querySnapshot = await getDocs(q)
+
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+  } catch (error) {
+    console.error('Error fetching all published announcements:', error)
+    throw error
+  }
+}
+
+/**
  * Get total count of published announcements
  * @returns {Promise<number>} Total count of published announcements
  */

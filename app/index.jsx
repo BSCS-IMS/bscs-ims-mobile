@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
 import { fetchAllProducts } from '../services/productApi'
 import { fetchActiveResellersSortedByName } from '../services/resellerApi'
 import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
@@ -21,6 +22,7 @@ const formatTimestamp = (timestamp) => {
 }
 
 export default function HomeScreen() {
+  const router = useRouter()
   const [productCount, setProductCount] = useState(null)
   const [resellerCount, setResellerCount] = useState(null)
   const [announcements, setAnnouncements] = useState([])
@@ -133,10 +135,7 @@ export default function HomeScreen() {
               {totalAnnouncements > 5 && (
                 <TouchableOpacity
                   className='items-center py-2'
-                  onPress={() => {
-                    // TODO: Navigate to full announcements page
-                    console.log('View more announcements')
-                  }}
+                  onPress={() => router.push('/announcements')}
                 >
                   <Text className='text-sm font-semibold' style={{ color: NAVY }}>
                     View more announcements
