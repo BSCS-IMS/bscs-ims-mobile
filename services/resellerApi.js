@@ -11,8 +11,9 @@ import {
   deleteDoc,
   Timestamp,
   orderBy,
-  limit, // Added limit
-  startAfter, // Added startAfter
+  limit,
+  startAfter,
+  onSnapshot,
 } from 'firebase/firestore'
 
 // Reseller fields
@@ -256,6 +257,61 @@ export const fetchActiveResellersSortedByName = async ({ sortBy = null, asc = tr
     return { resellers, lastVisibleDoc: newLastVisibleDoc, hasMore }
   } catch (error) {
     console.error('Error fetching active resellers sorted by name:', error)
+    throw error
+  }
+}
+
+/**
+ * Subscribe to active resellers with optional sorting by name.
+ * Replaces fetchActiveResellersSortedByName for real-time updates.
+ */
+export const subscribeToActiveResellersSortedByName = ({ 
+  sortBy = null, 
+  asc = true, 
+  limit: queryLimit = 10, 
+  onUpdate 
+} = {}) => {
+  try {
+    const resellersRef = collection(db, 'resellers')
+    let q = query(resellersRef, where('status', '==', 'active'))
+
+    if (sortBy === 'Name') {
+      q = query(q, orderBy('businessName', asc ? 'asc' : 'desc'))
+    } else {
+      q = query(q, orderBy('businessName', 'asc'))
+    }
+
+    q = query(q, limit(queryLimit))
+
+    return onSnapshot(q, (querySnapshot) => {
+      const resellers = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+
+      const newLastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1]
+      const hasMore = querySnapshot.docs.length === queryLimit
+
+      onUpdate({ resellers, lastVisibleDoc: newLastVisibleDoc, hasMore })
+    })
+  } catch (error) {
+    console.error('Error subscribing to active resellers sorted by name:', error)
+    throw error
+  }
+}
+
+/**
+ * Subscribe to the total count of all resellers (for the dashboard).
+ */
+export const subscribeToAllResellersCount = (onUpdate) => {
+  try {
+    const resellersRef = collection(db, 'resellers')
+    // Subscribe to changes on the collection to update the count
+    return onSnapshot(resellersRef, (querySnapshot) => {
+      onUpdate(querySnapshot.size)
+    })
+  } catch (error) {
+    console.error('Error subscribing to resellers count:', error)
     throw error
   }
 }

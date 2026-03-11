@@ -34,7 +34,7 @@ export default function ProductCard({ item, onPress }) {
         </Text>
 
         <View style={s.footer}>
-          <Text style={s.qty}>Quantity: {item.quantity ?? 0}</Text>
+          <Text style={s.qty}>Quantity: {parseInt(item.quantity) || 0}</Text>
           <View style={[s.badge, { backgroundColor: st.bg }]}>
             <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
           </View>

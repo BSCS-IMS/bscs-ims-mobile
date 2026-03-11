@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, Platform, StatusBar, SafeAreaView, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { fetchActiveResellersSortedByName } from '../services/resellerApi'
+import { subscribeToActiveResellersSortedByName } from '../services/resellerApi'
+import { subscribeToAllResellerProductCounts } from '../services/resellerProductApi'
 
 import ResellerScreenHeader from '../modules/reseller-screen/ResellerScreenHeader'
 import ResellerListContainer from '../modules/reseller-screen/ResellerListContainer'
@@ -28,6 +29,9 @@ export default function ResellersScreen() {
   const [selectedReseller, setSelectedReseller] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
 
+  const [allData, setAllData] = useState([])
+  const [productCounts, setProductCounts] = useState({})
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -37,50 +41,60 @@ export default function ResellersScreen() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const loadResellers = async (loadMore = false) => {
-    if (!hasMore && loadMore) return
+  // Subcribe to product counts for all resellers
+  useEffect(() => {
+    const unsubscribe = subscribeToAllResellerProductCounts((counts) => {
+      setProductCounts(counts)
+    })
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [])
+
+  // Process data: filter by search and append product counts synchronously
+  useEffect(() => {
+    const searchedResellers = allData.filter((item) =>
+      (item.businessName || item.ownerName || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
+
+    const resellersWithCounts = searchedResellers.map((reseller) => ({
+      ...reseller,
+      productCount: productCounts[reseller.id] || 0
+    }))
+
+    setData(resellersWithCounts)
+  }, [allData, debouncedSearch, productCounts])
+
+  // Real-time subscription
+  useEffect(() => {
     setLoading(true)
     setError(null)
+    setLastVisibleDoc(null)
+    setHasMore(true) // Reset state when params change, but subscription manages its own
 
-    try {
-      const {
-        resellers: fetchedResellers,
-        lastVisibleDoc: newLastVisibleDoc,
-        hasMore: newHasMore,
-      } = await fetchActiveResellersSortedByName({
-        sortBy,
-        asc,
-        limit,
-        lastVisibleDoc: loadMore ? lastVisibleDoc : null,
-      })
+    const unsubscribe = subscribeToActiveResellersSortedByName({
+      sortBy,
+      asc,
+      limit,
+      onUpdate: ({ resellers: fetchedResellers, lastVisibleDoc: newLastVisibleDoc, hasMore: newHasMore }) => {
+        setAllData(fetchedResellers)
+        setLastVisibleDoc(newLastVisibleDoc)
+        setHasMore(newHasMore)
+        setLoading(false)
+        setRefreshing(false)
+      }
+    })
 
-      const searchedResellers = fetchedResellers.filter((item) =>
-        (item.businessName || item.ownerName || '').toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-
-      setData((prev) => (loadMore ? [...prev, ...searchedResellers] : searchedResellers))
-      setLastVisibleDoc(newLastVisibleDoc)
-      setHasMore(newHasMore)
-    } catch (err) {
-      console.error('Error fetching resellers:', err)
-      setError('Failed to load resellers. Please try again.')
-    } finally {
-      setLoading(false)
+    return () => {
+      if (unsubscribe) unsubscribe()
     }
-  }
+  }, [sortBy, asc, limit])
 
-  useEffect(() => {
-    setLastVisibleDoc(null)
-    setHasMore(true)
-    loadResellers(false)
-  }, [debouncedSearch, sortBy, asc, limit])
-
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setRefreshing(true)
-    setLastVisibleDoc(null)
-    setHasMore(true)
-    await loadResellers(false)
-    setRefreshing(false)
+    // The query is fixed by params, so refresh just triggers UI state temporarily. 
+    // Real updates handle the rest.
+    setTimeout(() => setRefreshing(false), 500)
   }
 
   const handleCardPress = (reseller) => {
@@ -110,7 +124,7 @@ export default function ResellersScreen() {
             loading={loading}
             error={error}
             filteredData={data}
-            loadResellers={loadResellers}
+            loadResellers={handleRefresh}
             onCardPress={handleCardPress}
             refreshing={refreshing}
             onRefresh={handleRefresh}

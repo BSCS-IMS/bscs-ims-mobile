@@ -9,6 +9,8 @@ import {
   deleteDoc,
   doc,
   Timestamp,
+  getCountFromServer,
+  onSnapshot,
 } from 'firebase/firestore'
 import { fetchProductById } from './productApi'
 
@@ -100,3 +102,56 @@ export const fetchActiveProductsForReseller = async (resellerId) => {
     throw error
   }
 }
+
+/**
+ * Fetch the count of active products for a reseller.
+ */
+export const fetchActiveProductCountForReseller = async (resellerId) => {
+  try {
+    const colRef = collection(db, LINK_COLLECTION)
+    const q = query(colRef, where('resellerId', '==', resellerId), where('isActive', '==', true))
+    const snapshot = await getCountFromServer(q)
+    return snapshot.data().count
+  } catch (error) {
+    console.error('Error fetching active product count for reseller:', error)
+    // Fallback to fetching documents if getCountFromServer is restricted or fails
+    try {
+      const colRef = collection(db, LINK_COLLECTION)
+      const q = query(colRef, where('resellerId', '==', resellerId), where('isActive', '==', true))
+      const snapshot = await getDocs(q)
+      return snapshot.size
+    } catch (fallbackError) {
+      console.error('Fallback error fetching active product count:', fallbackError)
+      return 0
+    }
+  }
+}
+
+/**
+ * Subscribes to the reseller-product links collection and calculates total active links for each reseller.
+ * @param {Function} onUpdate - Callback that receives an object mapping resellerId to active product count.
+ * @returns {Function} Unsubscribe function
+ */
+export const subscribeToAllResellerProductCounts = (onUpdate) => {
+  try {
+    const colRef = collection(db, LINK_COLLECTION)
+    const q = query(colRef, where('isActive', '==', true))
+    
+    return onSnapshot(q, (querySnapshot) => {
+      const countsByReseller = {}
+      
+      querySnapshot.docs.forEach((doc) => {
+        const { resellerId } = doc.data()
+        if (resellerId) {
+          countsByReseller[resellerId] = (countsByReseller[resellerId] || 0) + 1
+        }
+      })
+      
+      onUpdate(countsByReseller)
+    })
+  } catch (error) {
+    console.error('Error subscribing to reseller product counts:', error)
+    throw error
+  }
+}
+
