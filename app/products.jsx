@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, SafeAreaView, StatusBar, Platform, TouchableOpacity, Text } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { fetchActiveProductsSorted } from '../services/productApi'
+import { subscribeToActiveProductsSorted } from '../services/productApi'
+import { subscribeToInventoryQuantities } from '../services/inventoryApi'
 
 import ProductScreenHeader from '../modules/product-screen/ProductScreenHeader'
 import ProductListContainer from '../modules/product-screen/ProductListContainer'
@@ -28,6 +29,9 @@ export default function ProductsScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
 
+  const [allData, setAllData] = useState([])
+  const [inventoryQuantities, setInventoryQuantities] = useState({})
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -37,50 +41,60 @@ export default function ProductsScreen() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const loadProducts = async (loadMore = false) => {
-    if (!hasMore && loadMore) return
+  // Subcribe to inventory quantities
+  useEffect(() => {
+    const unsubscribe = subscribeToInventoryQuantities((quantities) => {
+      setInventoryQuantities(quantities)
+    })
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [])
+
+  // Filter data client-side and attach calculated quantities
+  useEffect(() => {
+    const searchedProducts = allData.filter((item) =>
+      (item.name || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
+
+    const productsWithQuantities = searchedProducts.map((product) => ({
+      ...product,
+      quantity: inventoryQuantities[product.id] || parseInt(product.quantity) || 0
+    }))
+
+    setData(productsWithQuantities)
+  }, [allData, debouncedSearch, inventoryQuantities])
+
+  // Real-time subscription
+  useEffect(() => {
     setLoading(true)
     setError(null)
+    setLastVisibleDoc(null)
+    setHasMore(true) // Reset state when params change, but subscription manages its own
 
-    try {
-      const {
-        products: fetchedProducts,
-        lastVisibleDoc: newLastVisibleDoc,
-        hasMore: newHasMore,
-      } = await fetchActiveProductsSorted({
-        sortBy,
-        asc,
-        limit,
-        lastVisibleDoc: loadMore ? lastVisibleDoc : null,
-      })
+    const unsubscribe = subscribeToActiveProductsSorted({
+      sortBy,
+      asc,
+      limit, // For infinite scroll logic, we'd add loadMore logic, but dropdown limits limit this query 
+      onUpdate: ({ products: fetchedProducts, lastVisibleDoc: newLastVisibleDoc, hasMore: newHasMore }) => {
+        setAllData(fetchedProducts)
+        setLastVisibleDoc(newLastVisibleDoc)
+        setHasMore(newHasMore)
+        setLoading(false)
+        setRefreshing(false)
+      }
+    })
 
-      const searchedProducts = fetchedProducts.filter((item) =>
-        (item.name || '').toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-
-      setData((prev) => (loadMore ? [...prev, ...searchedProducts] : searchedProducts))
-      setLastVisibleDoc(newLastVisibleDoc)
-      setHasMore(newHasMore)
-    } catch (err) {
-      console.error('Error fetching products:', err)
-      setError('Failed to load products. Please try again.')
-    } finally {
-      setLoading(false)
+    return () => {
+      if (unsubscribe) unsubscribe()
     }
-  }
+  }, [sortBy, asc, limit])
 
-  useEffect(() => {
-    setLastVisibleDoc(null)
-    setHasMore(true)
-    loadProducts(false)
-  }, [debouncedSearch, sortBy, asc, limit])
-
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setRefreshing(true)
-    setLastVisibleDoc(null)
-    setHasMore(true)
-    await loadProducts(false)
-    setRefreshing(false)
+    // The query is fixed by params, so refresh just triggers UI state temporarily. 
+    // Real updates handle the rest.
+    setTimeout(() => setRefreshing(false), 500)
   }
 
   const handleCardPress = (product) => {
@@ -110,7 +124,7 @@ export default function ProductsScreen() {
             loading={loading}
             error={error}
             data={data}
-            onRetry={loadProducts}
+            onRetry={handleRefresh}
             onCardPress={handleCardPress}
             refreshing={refreshing}
             onRefresh={handleRefresh}

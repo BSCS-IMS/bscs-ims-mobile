@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { fetchAllPublishedAnnouncements } from '../services/announcementApi'
+import { subscribeToPublishedAnnouncements } from '../services/announcementApi'
 
 const NAVY = '#1F384C'
 const BG = '#F1F2F7'
@@ -35,10 +35,15 @@ export default function AnnouncementsScreen() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchAllPublishedAnnouncements()
-      .then((data) => setAnnouncements(data))
-      .catch((err) => console.error('Failed to fetch announcements:', err))
-      .finally(() => setLoading(false))
+    // Subscribe to real-time announcements
+    const unsubscribe = subscribeToPublishedAnnouncements(50, (data) => {
+      setAnnouncements(data)
+      setLoading(false)
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   return (

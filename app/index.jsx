@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { fetchAllProducts } from '../services/productApi'
-import { fetchActiveResellersSortedByName } from '../services/resellerApi'
+import { subscribeToAllProductsCount } from '../services/productApi'
+import { subscribeToAllResellersCount } from '../services/resellerApi'
 import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
 
 const NAVY = '#1F384C'
@@ -29,18 +29,26 @@ export default function HomeScreen() {
   const [totalAnnouncements, setTotalAnnouncements] = useState(0)
 
   useEffect(() => {
-    fetchAllProducts()
-      .then((data) => setProductCount(data.length))
-      .catch(() => setProductCount('—'))
+    const unsubscribeProducts = subscribeToAllProductsCount((count) => {
+      setProductCount(count)
+    })
 
-    fetchActiveResellersSortedByName({ limit: 100 })
-      .then(({ resellers }) => setResellerCount(resellers.length))
-      .catch(() => setResellerCount('—'))
+    const unsubscribeResellers = subscribeToAllResellersCount((count) => {
+      setResellerCount(count)
+    })
 
-    // Get total count of announcements
+    // Get total count of announcements (no real-time listener needed for just the total > 5 check, but can be done)
     getPublishedAnnouncementsCount()
       .then((count) => setTotalAnnouncements(count))
       .catch((err) => console.error('Failed to get announcement count:', err))
+
+    return () => {
+      if (unsubscribeProducts) unsubscribeProducts()
+      if (unsubscribeResellers) unsubscribeResellers()
+    }
+  }, [])
+
+  useEffect(() => {
 
     // Subscribe to real-time announcements for display
     const unsubscribe = subscribeToPublishedAnnouncements(5, (data) => {

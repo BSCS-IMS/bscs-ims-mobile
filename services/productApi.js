@@ -14,6 +14,7 @@ import {
   orderBy,
   limit,
   startAfter,
+  onSnapshot,
 } from 'firebase/firestore'
 
 // Product fields
@@ -247,6 +248,65 @@ export const fetchProductsAcrossSubcollections = async () => {
     return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (error) {
     console.error('Error fetching products across subcollections:', error)
+    throw error
+  }
+}
+
+/**
+ * Subscribe to active products with optional sorting and pagination.
+ * Replaces fetchActiveProductsSorted for real-time updates.
+ */
+export const subscribeToActiveProductsSorted = ({
+  sortBy = null,
+  asc = true,
+  limit: queryLimit = 10,
+  onUpdate
+} = {}) => {
+  try {
+    const productsRef = collection(db, 'products')
+    let q = query(productsRef, where('isActive', '==', true))
+
+    let sortField = 'name'
+    if (sortBy === 'Name') sortField = 'name'
+    else if (sortBy === 'Price') sortField = 'currentPrice'
+    else if (sortBy === 'Quantity') sortField = 'quantity'
+
+    if (sortBy) {
+      q = query(q, orderBy(sortField, asc ? 'asc' : 'desc'))
+    } else {
+      q = query(q, orderBy('name', 'asc'))
+    }
+
+    q = query(q, limit(queryLimit))
+
+    return onSnapshot(q, (querySnapshot) => {
+      const products = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      const newLastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1]
+      const hasMore = querySnapshot.docs.length === queryLimit
+      
+      onUpdate({ products, lastVisibleDoc: newLastVisibleDoc, hasMore })
+    })
+  } catch (error) {
+    console.error('Error subscribing to active products:', error)
+    throw error
+  }
+}
+
+/**
+ * Subscribe to the total count of all products (for the dashboard).
+ */
+export const subscribeToAllProductsCount = (onUpdate) => {
+  try {
+    const productsRef = collection(db, 'products')
+    // We cannot use getCountFromServer in onSnapshot directly, so we listen to changes on the collection.
+    return onSnapshot(productsRef, (querySnapshot) => {
+      onUpdate(querySnapshot.size)
+    })
+  } catch (error) {
+    console.error('Error subscribing to products count:', error)
     throw error
   }
 }

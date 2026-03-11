@@ -98,7 +98,7 @@ export default function ProductModal({ visible, item, onClose }) {
               <View style={s.statDivider} />
               <View style={s.statBox}>
                 <Text style={s.statLabel}>Quantity</Text>
-                <Text style={s.statValue}>{item?.quantity ?? 0}</Text>
+                <Text style={s.statValue}>{parseInt(item?.quantity) || 0}</Text>
               </View>
             </View>
 
