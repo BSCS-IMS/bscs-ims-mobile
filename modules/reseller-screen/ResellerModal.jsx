@@ -56,17 +56,7 @@ export default function ResellerModal({ visible, item, onClose }) {
 
   return (
     <>
-      {/* Lightbox */}
-      <Modal visible={lightboxVisible} transparent animationType='fade' onRequestClose={() => setLightboxVisible(false)}>
-        <View style={s.lightboxOverlay}>
-          <TouchableOpacity style={s.lightboxClose} onPress={() => setLightboxVisible(false)}>
-            <Ionicons name='close' size={24} color='#fff' />
-          </TouchableOpacity>
-          <Image source={{ uri: item?.imageUrl }} style={s.lightboxImage} resizeMode='contain' />
-        </View>
-      </Modal>
-
-      <Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
+      <Modal visible={visible} transparent animationType='slide' onRequestClose={lightboxVisible ? () => setLightboxVisible(false) : onClose}>
         <View style={s.overlay}>
           <View style={s.sheet}>
 
@@ -175,6 +165,16 @@ export default function ResellerModal({ visible, item, onClose }) {
             </ScrollView>
           </View>
         </View>
+
+        {/* Lightbox overlay — inside the modal to avoid nested-modal iOS bug */}
+        {lightboxVisible && (
+          <View style={s.lightboxOverlay}>
+            <TouchableOpacity style={s.lightboxClose} onPress={() => setLightboxVisible(false)}>
+              <Ionicons name='close' size={24} color='#fff' />
+            </TouchableOpacity>
+            <Image source={{ uri: item?.imageUrl }} style={s.lightboxImage} resizeMode='contain' />
+          </View>
+        )}
       </Modal>
     </>
   )
@@ -246,7 +246,12 @@ const s = StyleSheet.create({
     padding: 4,
   },
   lightboxOverlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
     backgroundColor: 'rgba(0,0,0,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
