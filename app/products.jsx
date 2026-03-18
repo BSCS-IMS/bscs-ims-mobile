@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, SafeAreaView, StatusBar, Platform, TouchableOpacity, Text } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons'
 import { subscribeToActiveProductsSorted } from '../services/productApi'
 import { subscribeToInventoryQuantities } from '../services/inventoryApi'
 
@@ -118,6 +118,18 @@ export default function ProductsScreen() {
           asc={asc}
           setAsc={setAsc}
         />
+
+        {debouncedSearch.length > 0 && (
+          <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#E8EEF4', borderRadius: 20, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Ionicons name='search-outline' size={13} color='#1F384C' />
+              <Text style={{ fontSize: 12, color: '#1F384C', fontFamily: 'Inter' }}>{debouncedSearch}</Text>
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name='close-circle' size={15} color='#1F384C' />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <View style={{ flex: 1 }}>
           <ProductListContainer

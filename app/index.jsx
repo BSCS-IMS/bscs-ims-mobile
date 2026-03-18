@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { View, Text, SafeAreaView, StatusBar, Platform, Image, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { subscribeToAllProductsCount } from '../services/productApi'
 import { subscribeToAllResellersCount } from '../services/resellerApi'
 import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
@@ -115,8 +116,12 @@ export default function HomeScreen() {
           <Text className='text-lg font-bold text-slate-900 mb-3'>Announcements</Text>
 
           {announcements.length === 0 ? (
-            <View className='bg-white rounded-xl px-4 py-6 border border-gray-100'>
-              <Text className='text-sm text-slate-400 text-center'>No announcements yet</Text>
+            <View className='bg-white rounded-xl px-4 py-8 border border-gray-100 items-center'>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                <Ionicons name='megaphone-outline' size={22} color='#CBD5E1' />
+              </View>
+              <Text className='text-sm font-semibold text-slate-500 mb-1'>No announcements yet</Text>
+              <Text className='text-xs text-slate-400 text-center'>Check back later for updates.</Text>
             </View>
           ) : (
             <>

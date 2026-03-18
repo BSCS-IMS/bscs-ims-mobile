@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native'
+import { View, Text, Image, TouchableOpacity, StyleSheet, useWindowDimensions, Linking } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
 const NAVY = '#1F384C'
@@ -40,8 +40,18 @@ export default function ResellerCard({ item, onPress }) {
             <Ionicons name='cube-outline' size={11} color='#94A3B8' />
             <Text style={s.productCountText}>{item.productCount ?? 0}</Text>
           </View>
-          <View style={[s.badge, { backgroundColor: st.bg }]}>
-            <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
+          <View style={s.footerRight}>
+            <View style={[s.badge, { backgroundColor: st.bg }]}>
+              <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
+            </View>
+            {item.contactNumber ? (
+              <TouchableOpacity
+                style={s.callBtn}
+                onPress={(e) => { e.stopPropagation(); Linking.openURL('tel:' + item.contactNumber) }}
+              >
+                <Ionicons name='call-outline' size={13} color={NAVY} />
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
       </View>
@@ -108,5 +118,15 @@ const s = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontWeight: '700',
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  callBtn: {
+    backgroundColor: '#E8EEF4',
+    borderRadius: 6,
+    padding: 4,
   },
 })

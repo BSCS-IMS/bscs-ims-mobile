@@ -8,12 +8,15 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  Share,
+  Dimensions,
 } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { fetchLinksByProduct } from '../../services/resellerProductApi'
 import { fetchResellerById } from '../../services/resellerApi'
 
 const NAVY = '#1F384C'
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 
 const statusStyle = (status) => {
   if (status === true || status === 'active') return { bg: '#D1FAE5', text: '#065F46', label: 'active' }
@@ -24,6 +27,7 @@ const statusStyle = (status) => {
 export default function ProductModal({ visible, item, onClose }) {
   const [resellers, setResellers] = useState([])
   const [loadingResellers, setLoadingResellers] = useState(false)
+  const [lightboxVisible, setLightboxVisible] = useState(false)
 
   useEffect(() => {
     if (!item?.id) return
@@ -48,105 +52,131 @@ export default function ProductModal({ visible, item, onClose }) {
 
   const st = statusStyle(item?.isActive ?? item?.status)
 
+  const handleShare = () => {
+    const price = item?.currentPrice ? `₱${item.currentPrice}${item?.priceUnit ? `/${item.priceUnit}` : ''}` : ''
+    const qty = item?.quantity ? ` • Qty: ${parseInt(item.quantity)}` : ''
+    Share.share({ message: `${item?.name || 'Product'}${price ? ' — ' + price : ''}${qty}` })
+  }
+
   return (
-    <Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
-      <View style={s.overlay}>
-        <View style={s.sheet}>
-
-          {/* Handle + close */}
-          <View style={s.handleRow}>
-            <View style={s.handle} />
-          </View>
-          <TouchableOpacity style={s.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name='close' size={20} color='#9CA3AF' />
+    <>
+      {/* Lightbox */}
+      <Modal visible={lightboxVisible} transparent animationType='fade' onRequestClose={() => setLightboxVisible(false)}>
+        <View style={s.lightboxOverlay}>
+          <TouchableOpacity style={s.lightboxClose} onPress={() => setLightboxVisible(false)}>
+            <Ionicons name='close' size={24} color='#fff' />
           </TouchableOpacity>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-
-            {/* Image */}
-            {item?.imageUrl ? (
-              <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='contain' />
-            ) : (
-              <View style={[s.image, s.imagePlaceholder]}>
-                <MaterialCommunityIcons name='package-variant-closed' size={44} color='#CBD5E1' />
-              </View>
-            )}
-
-            {/* Name + badge */}
-            <View style={s.nameRow}>
-              <Text style={s.name} numberOfLines={2}>
-                {item?.name || 'N/A'}
-              </Text>
-              <View style={[s.badge, { backgroundColor: st.bg }]}>
-                <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
-              </View>
-            </View>
-
-            {/* SKU */}
-            {item?.sku ? (
-              <Text style={s.sku}>SKU: {item.sku}</Text>
-            ) : null}
-
-            {/* Price + Qty row */}
-            <View style={s.statsRow}>
-              <View style={s.statBox}>
-                <Text style={s.statLabel}>Price</Text>
-                <Text style={s.statValue}>
-                  ₱{item?.currentPrice ?? '—'}{item?.priceUnit ? `/${item.priceUnit}` : ''}
-                </Text>
-              </View>
-              <View style={s.statDivider} />
-              <View style={s.statBox}>
-                <Text style={s.statLabel}>Quantity</Text>
-                <Text style={s.statValue}>{parseInt(item?.quantity) || 0}</Text>
-              </View>
-            </View>
-
-            {/* Description */}
-            {item?.description ? (
-              <View style={s.notesBlock}>
-                <Text style={s.notesLabel}>Description</Text>
-                <Text style={s.notesText}>{item.description}</Text>
-              </View>
-            ) : null}
-
-            {/* Divider */}
-            <View style={s.divider} />
-
-            {/* Available at */}
-            <Text style={s.sectionTitle}>Available at</Text>
-
-            {loadingResellers ? (
-              <ActivityIndicator size='small' color={NAVY} style={{ marginTop: 8 }} />
-            ) : resellers.length === 0 ? (
-              <Text style={s.emptyText}>Not available at any reseller.</Text>
-            ) : (
-              resellers.map(({ linkId, reseller }) => {
-                const rst = statusStyle(reseller.status)
-                return (
-                  <View key={linkId} style={s.listRow}>
-                    {reseller.imageUrl ? (
-                      <Image source={{ uri: reseller.imageUrl }} style={s.thumb} resizeMode='cover' />
-                    ) : (
-                      <View style={[s.thumb, s.thumbPlaceholder]}>
-                        <Ionicons name='person-outline' size={18} color='#CBD5E1' />
-                      </View>
-                    )}
-                    <Text style={[s.listRowName, { flex: 1 }]} numberOfLines={1}>
-                      {reseller.businessName || reseller.ownerName || 'N/A'}
-                    </Text>
-                    <View style={[s.badge, { backgroundColor: rst.bg }]}>
-                      <Text style={[s.badgeText, { color: rst.text }]}>{rst.label}</Text>
-                    </View>
-                  </View>
-                )
-              })
-            )}
-
-          </ScrollView>
+          <Image source={{ uri: item?.imageUrl }} style={s.lightboxImage} resizeMode='contain' />
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
+        <View style={s.overlay}>
+          <View style={s.sheet}>
+
+            {/* Handle + close + share */}
+            <View style={s.handleRow}>
+              <View style={s.handle} />
+            </View>
+            <TouchableOpacity style={s.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name='close' size={20} color='#9CA3AF' />
+            </TouchableOpacity>
+            <TouchableOpacity style={s.shareBtn} onPress={handleShare} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name='share-outline' size={18} color={NAVY} />
+            </TouchableOpacity>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+              {/* Image */}
+              {item?.imageUrl ? (
+                <TouchableOpacity onPress={() => setLightboxVisible(true)} activeOpacity={0.85}>
+                  <Image source={{ uri: item.imageUrl }} style={s.image} resizeMode='contain' />
+                  <View style={s.imageZoomHint}>
+                    <Ionicons name='expand-outline' size={13} color='#fff' />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <View style={[s.image, s.imagePlaceholder]}>
+                  <MaterialCommunityIcons name='package-variant-closed' size={44} color='#CBD5E1' />
+                </View>
+              )}
+
+              {/* Name + badge */}
+              <View style={s.nameRow}>
+                <Text style={s.name} numberOfLines={2}>
+                  {item?.name || 'N/A'}
+                </Text>
+                <View style={[s.badge, { backgroundColor: st.bg }]}>
+                  <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
+                </View>
+              </View>
+
+              {/* SKU */}
+              {item?.sku ? (
+                <Text style={s.sku}>SKU: {item.sku}</Text>
+              ) : null}
+
+              {/* Price + Qty row */}
+              <View style={s.statsRow}>
+                <View style={s.statBox}>
+                  <Text style={s.statLabel}>Price</Text>
+                  <Text style={s.statValue}>
+                    ₱{item?.currentPrice ?? '—'}{item?.priceUnit ? `/${item.priceUnit}` : ''}
+                  </Text>
+                </View>
+                <View style={s.statDivider} />
+                <View style={s.statBox}>
+                  <Text style={s.statLabel}>Quantity</Text>
+                  <Text style={s.statValue}>{parseInt(item?.quantity) || 0}</Text>
+                </View>
+              </View>
+
+              {/* Description */}
+              {item?.description ? (
+                <View style={s.notesBlock}>
+                  <Text style={s.notesLabel}>Description</Text>
+                  <Text style={s.notesText}>{item.description}</Text>
+                </View>
+              ) : null}
+
+              {/* Divider */}
+              <View style={s.divider} />
+
+              {/* Available at */}
+              <Text style={s.sectionTitle}>Available at</Text>
+
+              {loadingResellers ? (
+                <ActivityIndicator size='small' color={NAVY} style={{ marginTop: 8 }} />
+              ) : resellers.length === 0 ? (
+                <Text style={s.emptyText}>Not available at any reseller.</Text>
+              ) : (
+                resellers.map(({ linkId, reseller }) => {
+                  const rst = statusStyle(reseller.status)
+                  return (
+                    <View key={linkId} style={s.listRow}>
+                      {reseller.imageUrl ? (
+                        <Image source={{ uri: reseller.imageUrl }} style={s.thumb} resizeMode='cover' />
+                      ) : (
+                        <View style={[s.thumb, s.thumbPlaceholder]}>
+                          <Ionicons name='person-outline' size={18} color='#CBD5E1' />
+                        </View>
+                      )}
+                      <Text style={[s.listRowName, { flex: 1 }]} numberOfLines={1}>
+                        {reseller.businessName || reseller.ownerName || 'N/A'}
+                      </Text>
+                      <View style={[s.badge, { backgroundColor: rst.bg }]}>
+                        <Text style={[s.badgeText, { color: rst.text }]}>{rst.label}</Text>
+                      </View>
+                    </View>
+                  )
+                })
+              )}
+
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </>
   )
 }
 
@@ -182,6 +212,15 @@ const s = StyleSheet.create({
     borderRadius: 20,
     padding: 6,
   },
+  shareBtn: {
+    position: 'absolute',
+    top: 14,
+    left: 16,
+    zIndex: 10,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
+    padding: 6,
+  },
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -197,6 +236,33 @@ const s = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  imageZoomHint: {
+    position: 'absolute',
+    bottom: 24,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 6,
+    padding: 4,
+  },
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxClose: {
+    position: 'absolute',
+    top: 52,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  lightboxImage: {
+    width: SCREEN_W,
+    height: SCREEN_H * 0.75,
   },
   nameRow: {
     flexDirection: 'row',
