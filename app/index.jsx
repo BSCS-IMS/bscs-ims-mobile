@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { subscribeToAllProductsCount } from '../services/productApi'
 import { subscribeToAllResellersCount } from '../services/resellerApi'
-import { subscribeToPublishedAnnouncements, getPublishedAnnouncementsCount } from '../services/announcementApi'
+import { subscribeToPublishedAnnouncements } from '../services/announcementApi'
 
 const NAVY = '#1F384C'
 
@@ -27,7 +27,7 @@ export default function HomeScreen() {
   const [productCount, setProductCount] = useState(null)
   const [resellerCount, setResellerCount] = useState(null)
   const [announcements, setAnnouncements] = useState([])
-  const [totalAnnouncements, setTotalAnnouncements] = useState(0)
+  const [hasMoreAnnouncements, setHasMoreAnnouncements] = useState(false)
 
   useEffect(() => {
     const unsubscribeProducts = subscribeToAllProductsCount((count) => {
@@ -38,11 +38,6 @@ export default function HomeScreen() {
       setResellerCount(count)
     })
 
-    // Get total count of announcements (no real-time listener needed for just the total > 5 check, but can be done)
-    getPublishedAnnouncementsCount()
-      .then((count) => setTotalAnnouncements(count))
-      .catch((err) => console.error('Failed to get announcement count:', err))
-
     return () => {
       if (unsubscribeProducts) unsubscribeProducts()
       if (unsubscribeResellers) unsubscribeResellers()
@@ -50,10 +45,10 @@ export default function HomeScreen() {
   }, [])
 
   useEffect(() => {
-
-    // Subscribe to real-time announcements for display
-    const unsubscribe = subscribeToPublishedAnnouncements(5, (data) => {
-      setAnnouncements(data)
+    // Fetch 6 to detect if there are more than 5
+    const unsubscribe = subscribeToPublishedAnnouncements(6, (data) => {
+      setHasMoreAnnouncements(data.length === 6)
+      setAnnouncements(data.slice(0, 5))
     })
 
     return () => {
@@ -145,7 +140,7 @@ export default function HomeScreen() {
                 </View>
               ))}
 
-              {totalAnnouncements > 5 && (
+              {hasMoreAnnouncements && (
                 <TouchableOpacity
                   className='items-center py-2'
                   onPress={() => router.push('/announcements')}

@@ -62,8 +62,14 @@ export default function ProductsScreen() {
       quantity: inventoryQuantities[product.id] || parseInt(product.quantity) || 0
     }))
 
+    if (sortBy === 'Quantity') {
+      productsWithQuantities.sort((a, b) =>
+        asc ? a.quantity - b.quantity : b.quantity - a.quantity
+      )
+    }
+
     setData(productsWithQuantities)
-  }, [allData, debouncedSearch, inventoryQuantities])
+  }, [allData, debouncedSearch, inventoryQuantities, sortBy, asc])
 
   // Real-time subscription
   useEffect(() => {
@@ -73,7 +79,7 @@ export default function ProductsScreen() {
     setHasMore(true) // Reset state when params change, but subscription manages its own
 
     const unsubscribe = subscribeToActiveProductsSorted({
-      sortBy,
+      sortBy: sortBy === 'Quantity' ? null : sortBy,
       asc,
       limit, // For infinite scroll logic, we'd add loadMore logic, but dropdown limits limit this query 
       onUpdate: ({ products: fetchedProducts, lastVisibleDoc: newLastVisibleDoc, hasMore: newHasMore }) => {
